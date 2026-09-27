@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PackCheck — The Front Lies. The Back Tells The Truth.</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="responsive.css">
+
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+  <!-- ZXing.js — Live Barcode Reader from Camera -->
+  <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+</head>
+<body>
+
+  <!-- ========================================================================
+       STICKY NAVIGATION BAR (Brutalist Architecture)
+       ======================================================================== -->
+  <header class="site-nav" id="siteNav">
+    <div class="nav-brand" id="navBrandHome">
+      <span class="brand-stamp">PACKCHECK</span>
+      <span class="brand-subline">/ FOOD LABEL ANALYZER</span>
+    </div>
+
+    <!-- Desktop Navigation Links -->
+    <nav class="nav-links-menu" id="navDesktopMenu" aria-label="Primary Navigation">
+      <a href="#scan" class="nav-item-link" id="navLinkScan">HOW IT WORKS</a>
+      <a href="#truth" class="nav-item-link" id="navLinkTruth">SAMPLE RESULT</a>
+      <a href="#closingSection" class="nav-item-link" id="navLinkClosing">SCAN NOW</a>
+      <button id="btnOpenScansModal" class="nav-item-link" type="button" style="background:none;border:none;cursor:pointer;font-family:inherit;color:inherit;font-size:inherit;letter-spacing:inherit;">MY SCANS</button>
+      <a href="industry.html" class="nav-item-link" id="navLinkIndustry" style="color:var(--ink-safe);border:1.5px solid var(--ink-safe);padding:4px 10px;font-size:0.75rem;letter-spacing:0.04em;" title="Manufacturer &amp; Inspector compliance dashboard">FOR INDUSTRY</a>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- Primary Action -->
+      <button id="btnNavScan" class="btn-cta-primary" type="button">
+        <span>SCAN A PACKAGE</span>
+        <span class="mono" aria-hidden="true">⤤</span>
+      </button>
+
+      <!-- Guest Login Button (shown when not logged in) -->
+      <a href="login.html" id="btnNavLogin" class="btn-cta-secondary" style="padding:6px 14px;font-size:0.75rem;box-shadow:2px 2px 0 var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px;" aria-label="Sign in to your account">
+        <span>SIGN IN</span>
+        <span class="mono" aria-hidden="true">→</span>
+      </a>
+
+      <!-- User Session Info (shown when authenticated) -->
+      <div id="navUserInfo" style="display:none;align-items:center;gap:8px;">
+        <span id="navUserName" class="mono" style="font-size:0.72rem;font-weight:700;color:var(--ink-muted);"></span>
+        <button id="btnNavLogout" class="btn-cta-secondary" type="button" style="padding:5px 10px;font-size:0.72rem;box-shadow:2px 2px 0 var(--ink);" aria-label="Sign out">
+          SIGN OUT
+        </button>
+      </div>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button id="btnMobileNavToggle" class="btn-mobile-nav-toggle" type="button" aria-label="Open mobile menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+    <a href="#scan" class="mobile-nav-link" data-mobile-target="scan">HOW IT WORKS</a>
+    <a href="#truth" class="mobile-nav-link" data-mobile-target="truth">SAMPLE RESULT</a>
+    <a href="#closingSection" class="mobile-nav-link" data-mobile-target="closingSection">SCAN NOW</a>
+    <button id="btnMobileOpenScans" class="mobile-nav-link" type="button" style="background:none;border:none;cursor:pointer;text-align:left;width:100%;font-family:inherit;font-size:inherit;font-weight:inherit;">MY SCANS</button>
+    <a href="industry.html" class="mobile-nav-link" style="color:var(--ink-safe);">FOR INDUSTRY ↗</a>
+    
+    <!-- Mobile Sign In Link (when logged out) -->
+    <a href="login.html" id="btnMobileNavLogin" class="mobile-nav-link" style="color:var(--ink);font-weight:800;border-top:1px solid var(--border-light);margin-top:8px;padding-top:12px;">SIGN IN / REGISTER ↗</a>
+
+    <!-- Mobile Session Row (when logged in) -->
+    <div class="mobile-nav-session-row" id="mobileNavSessionRow" style="display:none;">
+      <span id="mobileNavUserName" class="mono" style="font-size:0.75rem;font-weight:700;color:var(--ink-muted);"></span>
+      <button id="btnMobileNavLogout" class="btn-cta-secondary mono" type="button" style="padding:6px 12px;font-size:0.75rem;" aria-label="Sign out">
+        SIGN OUT
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       GLOBAL INSPECTION TELEMETRY HUD (Simple Step Tracker)
+       ======================================================================== -->
+  <aside class="global-inspection-hud mono" id="globalInspectionHud" aria-live="polite" aria-label="Investigation Step Tracker">
+    <div class="hud-phase-meta">
+      <span class="hud-pulse-radar" aria-hidden="true"></span>
+      <span class="hud-phase-count" id="hudPhaseCount">STEP 1 OF 6</span>
+    </div>
+    <div class="hud-phase-title" id="hudPhaseTitle">SCAN PACKET</div>
+    <div class="hud-progress-track" aria-hidden="true">
+      <div class="hud-progress-fill" id="hudPhaseProgress"></div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================
+       PAGE 1: LANDING VIEW — STREAMLINED 4-SECTION LAYOUT
+       ======================================================================== -->
+  <main id="landingView" class="landing-view">
+
+    <!-- ====================================================================
+         SECTION 1: HERO — DARK VIDEO SCANNING BAY
+         ==================================================================== -->
+    <section class="hero-section hero-video-bg-mode" id="heroSection">
+
+      <!-- Video Background -->
+      <div class="hero-bg-video-wrapper" aria-hidden="true">
+        <video id="heroScanVideo" class="hero-bg-video-el" autoplay muted loop playsinline preload="auto">
+          <source src="assets/scanning-can.mp4" type="video/mp4">
+          <source src="Scanning_aluminum_beverage_can_20260921201916.mp4" type="video/mp4">
+        </video>
+        <div class="hero-bg-overlay"></div>
+        <div class="hero-bg-grid-lines"></div>
+        <div class="hero-corner-reticle reticle-tl"></div>
+        <div class="hero-corner-reticle reticle-tr"></div>
+        <div class="hero-corner-reticle reticle-bl"></div>
+        <div class="hero-corner-reticle reticle-br"></div>
+        <div class="hero-watermark-blocker" aria-hidden="true"></div>
+      </div>
+
+      <!-- Hero Content -->
+      <div class="hero-content-stage">
+
+        <!-- Left: Headline + CTA -->
+        <div class="hero-copy-col">
+          <div class="hero-kicker-tag">
+            <span class="kicker-rect" aria-hidden="true"></span>
+            <span>FOOD LABEL CHECKER</span>
+          </div>
+
+          <h1 class="hero-main-headline">
+            <span class="headline-line">THE FRONT</span>
+            <span class="headline-line">LIES.</span>
+            <span class="headline-line">THE BACK</span>
+            <span class="headline-line headline-truth-line">TELLS THE <span class="headline-truth-accent">TRUTH.</span></span>
+          </h1>
+
+          <p class="hero-subhead-text">
+            Point your phone at any food packet. We decode the ingredients list and tell you exactly what's inside — in plain words, not chemistry codes.
+          </p>
+
+          <div class="hero-cta-group hero-cta-watermark-cover">
+            <button id="btnHeroScan" class="btn-cta-primary hero-btn-solid" type="button">
+              <span>SCAN A PACKAGE</span>
+              <span class="mono" aria-hidden="true">↗</span>
+            </button>
+            <button id="btnHeroDemoScan" class="btn-cta-secondary hero-btn-outline" type="button">
+              <span>TRY SAMPLE SCAN</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Center zone (video shows through) -->
+        <div class="hero-can-zone" aria-hidden="true">
+          <div class="can-focal-frame">
+            <div class="focal-bracket bracket-tl"></div>
+            <div class="focal-bracket bracket-tr"></div>
+            <div class="focal-bracket bracket-bl"></div>
+            <div class="focal-bracket bracket-br"></div>
+            <div class="focal-label mono">
+              <span class="focal-pulse-dot"></span>
+              <span>SCANNING // 250ML CAN</span>
+            </div>
+          </div>
+          <div class="scan-connector-trace">
+            <div class="connector-line"><span class="connector-pulse"></span></div>
+            <div class="connector-label mono"><span>RESULT</span><span class="connector-arrow">→</span></div>
+          </div>
+        </div>
+
+        <!-- Right: Sample result card -->
+        <div class="hero-audit-col">
+          <div class="audit-panel-card" id="heroScanTargetCard">
+            <div class="audit-card-header mono">
+              <div class="audit-header-left">
+                <span class="audit-rec-indicator"></span>
+                <span class="audit-id">SAMPLE REPORT // ENERGY DRINK</span>
+              </div>
+              <span class="audit-status-badge text-accent-harm">[HIGH SUGAR]</span>
+            </div>
+            <div class="audit-card-body">
+              <div class="audit-metric-row">
+                <span class="metric-key mono">PRODUCT:</span>
+                <span class="metric-val mono" style="font-weight: 800; color: var(--ink);">VOLT SURGE ENERGY DRINK 250ML</span>
+              </div>
+              <div class="audit-metric-row">
+                <span class="metric-key mono">FRONT SAYS:</span>
+                <span class="metric-val mono quote">"ALL NATURAL ENERGY"</span>
+              </div>
+              <div class="audit-metric-row reality-row">
+                <span class="metric-key mono">THE REALITY:</span>
+                <span class="metric-val mono text-accent-harm">7 SPOONS OF SUGAR IN 1 CAN</span>
+              </div>
+              <div class="audit-metric-row score-row">
+                <span class="metric-key mono">HEALTH SCORE:</span>
+                <div class="score-display mono">
+                  <span class="score-num text-accent-warn">38</span>
+                  <span class="score-slash">/100</span>
+                  <span class="score-grade">[UNHEALTHY]</span>
+                </div>
+              </div>
+            </div>
+            <div class="audit-card-footer">
+              <button type="button" class="btn-target-inspect mono" id="btnHeroTargetInspect">
+                <span>SEE FULL REPORT</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Ticker -->
+      <div class="hero-bottom-ticker-bar mono">
+        <div class="ticker-segment"><span>SNAP ANY FOOD PACKET</span></div>
+        <div class="ticker-divider">/</div>
+        <div class="ticker-segment"><span>WE READ THE SMALL PRINT</span></div>
+        <div class="ticker-divider">/</div>
+        <div class="ticker-segment"><span>HONEST 0–100 HEALTH SCORE</span></div>
+        <div class="ticker-divider">/</div>
+        <div class="ticker-segment"><span>STATUS:</span> <strong class="text-accent-good">100% UNBIASED</strong></div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: HOW IT WORKS — 3 CLEAN STEPS
+         ==================================================================== -->
+    <section class="how-section" id="scan">
+      <div class="how-inner">
+        <div class="section-eyebrow mono">HOW IT WORKS</div>
+        <h2 class="section-title">THREE STEPS.<br>TOTAL CLARITY.</h2>
+
+        <div class="steps-grid">
+          <div class="step-block">
+            <div class="step-num mono">01</div>
+            <div class="step-icon" aria-hidden="true">📷</div>
+            <h3 class="step-title">SNAP</h3>
+            <p class="step-desc">Point your camera at any grocery packet — front, back, or just the ingredients list.</p>
+          </div>
+          <div class="step-connector" aria-hidden="true">→</div>
+          <div class="step-block">
+            <div class="step-num mono">02</div>
+            <div class="step-icon" aria-hidden="true">🔍</div>
+            <h3 class="step-title">CHECK</h3>
+            <p class="step-desc">We decode every ingredient and check against WHO health limits. No jargon.</p>
+          </div>
+          <div class="step-connector" aria-hidden="true">→</div>
+          <div class="step-block">
+            <div class="step-num mono">03</div>
+            <div class="step-icon" aria-hidden="true">✅</div>
+            <h3 class="step-title">SCORE</h3>
+            <p class="step-desc">Get an honest 0–100 health rating, plus better alternatives you can buy today.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3: SAMPLE RESULT — PROOF IT WORKS
+         ==================================================================== -->
+    <section class="proof-section" id="truth">
+      <div class="proof-inner">
+        <div class="section-eyebrow mono">SAMPLE RESULT</div>
+        <h2 class="section-title">SEE WHAT'S<br>ACTUALLY INSIDE.</h2>
+        <div class="mono" style="font-weight: 800; font-size: 0.88rem; color: var(--ink-harm); margin-top: 6px; margin-bottom: 8px;">
+          AUDITED PRODUCT: VOLT SURGE ENERGY DRINK (250ML)
+        </div>
+        <p class="section-desc">Here is a real scan of a popular energy drink sold in every supermarket. The front packaging calls it "All Natural Energy." Here is what we found:</p>
+
+        <div class="proof-card-row">
+
+          <!-- Front claim -->
+          <div class="proof-claim-block">
+            <div class="proof-block-label mono text-accent-muted">WHAT THE FRONT SAYS</div>
+            <div class="proof-claim-quote">"ALL NATURAL<br>ENERGY"</div>
+            <div class="proof-brand-note mono">— Printed in large text on front of can</div>
+          </div>
+
+          <!-- Arrow divider -->
+          <div class="proof-versus" aria-hidden="true">
+            <div class="versus-line"></div>
+            <div class="versus-badge mono">PACKCHECK<br>FINDS</div>
+            <div class="versus-line"></div>
+          </div>
+
+          <!-- Findings -->
+          <div class="proof-findings-block">
+            <div class="proof-block-label mono text-accent-muted">WHAT'S ACTUALLY INSIDE</div>
+            <ul class="proof-findings-list">
+              <li class="finding-item finding-harm">
+                <span class="finding-dot"></span>
+                <div>
+                  <strong>7 Teaspoons of Sugar</strong>
+                  <span class="mono finding-note">Exceeds your entire day's limit in 1 can</span>
+                </div>
+              </li>
+              <li class="finding-item finding-neutral">
+                <span class="finding-dot"></span>
+                <div>
+                  <strong>Synthetic Caffeine</strong>
+                  <span class="mono finding-note">Lab-made. Equal to 1 strong cup of coffee</span>
+                </div>
+              </li>
+              <li class="finding-item finding-harm">
+                <span class="finding-dot"></span>
+                <div>
+                  <strong>Chemical Preservative</strong>
+                  <span class="mono finding-note">Sodium Benzoate — extends shelf life 2+ years</span>
+                </div>
+              </li>
+              <li class="finding-item finding-neutral">
+                <span class="finding-dot"></span>
+                <div>
+                  <strong>Zero Real Herbs or Fruit</strong>
+                  <span class="mono finding-note">The "natural" on the label refers to nothing</span>
+                </div>
+              </li>
+            </ul>
+
+            <!-- Score bar -->
+            <div class="proof-score-bar">
+              <div class="proof-score-header mono">
+                <span>HEALTH SCORE</span>
+                <span class="proof-score-num text-accent-harm">38 / 100</span>
+              </div>
+              <div class="proof-score-track">
+                <div class="proof-score-fill" style="width: 38%;"></div>
+              </div>
+              <div class="proof-score-verdict mono text-accent-harm">UNHEALTHY — NOT RECOMMENDED DAILY</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="proof-cta-row">
+          <button id="btnShowcaseScanNow" class="btn-cta-primary" type="button">
+            <span>SCAN YOUR OWN PACKET</span>
+            <span class="mono" aria-hidden="true">↗</span>
+          </button>
+          <span class="proof-cta-note mono">Takes 2 seconds. No account needed.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: FINAL CTA — CLOSING CALL TO ACTION
+         ==================================================================== -->
+    <section class="closing-section" id="closingSection">
+      <div class="closing-inner">
+        <div class="closing-eyebrow mono">
+          <span class="pulse-good"></span>
+          <span>SCANNER READY</span>
+        </div>
+        <h2 class="closing-headline">
+          YOU'VE SEEN<br>THE FRONT.<br>
+          <span class="text-accent-yellow">NOW CHECK<br>THE BACK.</span>
+        </h2>
+        <p class="closing-sub">
+          Stop guessing in grocery aisles. Scan any packet in 2 seconds and know the honest truth before you pay.
+        </p>
+        <button id="btnClosingScan" class="btn-cta-primary btn-closing-main" type="button">
+          <span>SCAN YOUR PACKET NOW</span>
+          <span class="mono" aria-hidden="true">↗</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-real-footer">
+      <div><strong>PACKCHECK</strong> / Honest Food Label Checker</div>
+      <div>Benchmarks: WHO (2024), ICMR-NIN &amp; FSSAI</div>
+      <div>For guidance only • Not medical advice</div>
+      <button id="btnBackToTop" class="btn-back-to-top mono" type="button" aria-label="Back to top">
+        <span>BACK TO TOP</span>
+        <span class="arrow-up" aria-hidden="true">↑</span>
+      </button>
+    </footer>
+
+    <!-- Hidden compatibility hooks -->
+    <div id="shelfSection" style="display: none;"></div>
+    <div id="howItWorks" style="display: none;"></div>
+    <div id="toxinRadar" style="display: none;"></div>
+    <div id="problemSection" style="display: none;"></div>
+    <div id="pipelineSection" style="display: none;"></div>
+    <div id="nutritionSection" style="display: none;"></div>
+    <div id="ingredientsSection" style="display: none;"></div>
+    <div id="claimsSection" style="display: none;"></div>
+    <div id="compare" style="display: none;"></div>
+    <div id="pantry" style="display: none;"></div>
+    <div id="swaps" style="display: none;"></div>
+
+  </main>
+
+  <!-- ========================================================================
+       PAGE 2: RESULTS DASHBOARD (COMPLETE ENGINE READY)
+       ======================================================================== -->
+  <main id="dashboardView" class="dashboard-view" style="display: none;">
+    
+    <div class="dash-top-bar">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <button id="btnDashBackHome" class="btn-cta-secondary" type="button" style="padding: 6px 12px; font-size: 0.85rem;">
+          <span>← BACK TO HOME</span>
+        </button>
+        <span class="mono" style="font-size: 0.8rem; font-weight: 700; color: var(--ink-good);">
+          11 INGREDIENTS ANALYZED
+        </span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="btnDashCompareModal" class="btn-cta-secondary" type="button" style="padding: 6px 12px; font-size: 0.85rem;">
+          <span>COMPARE ALTERNATIVES</span>
+        </button>
+        <button id="btnDashScanAnother" class="btn-cta-primary" type="button" style="padding: 6px 14px; font-size: 0.85rem;">
+          <span>SCAN ANOTHER PACKAGE</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="dash-container">
+      
+      <!-- 1. Hero Product Strip -->
+      <section class="product-health-hero">
+        <div class="product-pack-visual-box" id="dashProductVisual">
+          <!-- Dynamic SVG -->
+        </div>
+
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px;">
+            <span id="dashProductCategory">Category</span>
+            <span>•</span>
+            <span id="dashProductServing">Serving</span>
+          </div>
+
+          <div class="mono" style="font-size:0.75rem; font-weight:800; color:var(--ink-harm); letter-spacing:0.06em; margin-bottom:3px;">SCANNED PRODUCT:</div>
+          <h2 class="product-main-title" id="dashProductTitle">Product Title</h2>
+
+          <div class="health-verdict-banner verdict-banner-harm" id="dashVerdictBanner">
+            <span id="dashVerdictText">Verdict text</span>
+          </div>
+        </div>
+
+        <div class="cleanscore-gauge-wrap">
+          <div class="radial-score-box">
+            <svg class="radial-svg" viewBox="0 0 100 100">
+              <circle class="radial-track" cx="50" cy="50" r="40"/>
+              <circle class="radial-progress" id="radialProgress" cx="50" cy="50" r="40" stroke="#D90429" stroke-dasharray="251.2" stroke-dashoffset="155"/>
+            </svg>
+            <div class="score-num-label">
+              <span class="score-large-number" id="dashScoreNum">38</span>
+              <span class="mono" style="font-size: 0.65rem; font-weight: 700; color: var(--ink-muted);">CLEANSCORE</span>
+            </div>
+          </div>
+          <span class="score-grade-badge score-harmful" id="dashScoreGradeBadge">Grade D</span>
+
+          <!-- Health Star Rating (Out of 5 Stars) -->
+          <div class="dash-star-rating-box" id="dashStarRatingBox" aria-label="Health Star Rating">
+            <div class="dash-stars-row" id="dashStarsRow" aria-label="Star rating visual"></div>
+            <div class="dash-stars-val mono" id="dashStarsValue">
+              <span id="dashStarsNum">2.0</span> / 5 STARS
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1B. JEV AI PRODUCT ASSESSMENT (Bounded Classification Layer) -->
+      <section class="jev-assessment-section" id="jevAssessmentSection" aria-label="Jev AI Health Assessment">
+        <div class="jev-card">
+          <div class="jev-card-header">
+            <div class="jev-header-title-wrap">
+              <span class="jev-badge-mono mono">INTELLIGENCE LAYER</span>
+              <h3 class="jev-title">JEV AI PRODUCT ASSESSMENT</h3>
+            </div>
+            <div class="jev-profile-pill-wrap">
+              <span class="mono" style="font-size: 0.72rem; color: var(--ink-muted); font-weight: 700;">AI PROFILE:</span>
+              <span class="jev-profile-badge profile-limit" id="jevProfileBadge">LIMIT</span>
+            </div>
+          </div>
+
+          <div class="jev-card-grid">
+            <!-- Left Column: PackCheck Nutrition Rule Analysis & Structured Flags -->
+            <div class="jev-sub-card">
+              <div class="jev-sub-head mono">
+                <span>PACKCHECK NUTRITION ANALYSIS</span>
+                <span class="jev-score-pill" id="jevPackCheckScorePill">SCORE: 38/100</span>
+              </div>
+              <div class="jev-flags-list" id="jevFlagsContainer">
+                <div class="jev-flag-pill jev-flag-warn">⚠ High Sugar</div>
+                <div class="jev-flag-pill jev-flag-good">✓ Low Sodium</div>
+                <div class="jev-flag-pill jev-flag-good">✓ Contains Protein</div>
+              </div>
+              <div class="jev-nutrition-summary mono" id="jevNutritionSummary">
+                <span><strong>Sugar:</strong> 27g</span>
+                <span><strong>Sodium:</strong> 42mg</span>
+                <span><strong>Protein:</strong> 2g</span>
+                <span><strong>Fat:</strong> 0.2g</span>
+              </div>
+            </div>
+
+            <!-- Right Column: Jev AI Classification & Explainable Reasons -->
+            <div class="jev-sub-card">
+              <div class="jev-sub-head mono">
+                <span>AI CLASSIFICATION &amp; REASON CODES</span>
+                <span class="jev-status-badge mono" id="jevStatusBadge">ACTIVE</span>
+              </div>
+              <div class="jev-levels-row">
+                <div class="jev-level-chip">
+                  <span class="mono" style="font-size: 0.68rem; color: var(--ink-muted);">SUGAR LEVEL</span>
+                  <span class="mono" id="jevSugarLevel" style="font-weight: 800; color: var(--ink-harm);">HIGH</span>
+                </div>
+                <div class="jev-level-chip">
+                  <span class="mono" style="font-size: 0.68rem; color: var(--ink-muted);">SODIUM LEVEL</span>
+                  <span class="mono" id="jevSodiumLevel" style="font-weight: 800; color: var(--ink-good);">LOW</span>
+                </div>
+              </div>
+
+              <div class="jev-why-block">
+                <div class="jev-why-title mono">WHY? (DECISION REASONS)</div>
+                <ul class="jev-reasons-list" id="jevReasonsList">
+                  <li>High sugar content exceeding recommended daily reference limits</li>
+                  <li>Moderate nutritional density; best kept as an occasional treat</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statutory Non-Medical Advisory Notice -->
+          <div class="jev-disclaimer-bar mono">
+            <span class="disclaimer-icon" style="font-weight: 900; color: var(--ink);">ℹ</span>
+            <span id="jevDisclaimerText">Jev AI classification is based strictly on PackCheck's factual nutritional parameters. For dietary guidance only; not medical advice or diagnosis.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. The 3 Core Substance Pillars -->
+      <section class="pillars-summary-grid">
+        <div class="pillar-stat-card pillar-harm" id="pillarCardHarmful" data-filter="harmful">
+          <div>
+            <div style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 900; color: var(--ink-harm);">
+              🔴 HARMFUL / LIMIT
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-muted);">Exceeds health ceilings</div>
+          </div>
+          <div class="pillar-count-badge" id="countHarmful">2</div>
+        </div>
+
+        <div class="pillar-stat-card pillar-safe" id="pillarCardSafe" data-filter="safe">
+          <div>
+            <div style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 900; color: var(--ink-safe);">
+              🔵 SAFE &amp; PERMITTED
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-muted);">Standard food-grade ingredients</div>
+          </div>
+          <div class="pillar-count-badge" id="countSafe">5</div>
+        </div>
+
+        <div class="pillar-stat-card pillar-good" id="pillarCardGood" data-filter="good">
+          <div>
+            <div style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 900; color: var(--ink-good);">
+              🟢 GOOD FOR HEALTH
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-muted);">Active vitamins, minerals &amp; whole foods</div>
+          </div>
+          <div class="pillar-count-badge" id="countGood">4</div>
+        </div>
+      </section>
+
+      <!-- 3. Substance Explorer List -->
+      <section class="substances-section">
+        <div class="substances-filter-header">
+          <div class="substances-tabs">
+            <button class="substance-tab-btn active" data-filter="all" id="tabFilterAll">All (<span id="tabCountAll">11</span>)</button>
+            <button class="substance-tab-btn" data-filter="harmful" id="tabFilterHarmful" style="color: var(--ink-harm);">Harmful (<span id="tabCountHarmful">2</span>)</button>
+            <button class="substance-tab-btn" data-filter="safe" id="tabFilterSafe" style="color: var(--ink-safe);">Safe (<span id="tabCountSafe">5</span>)</button>
+            <button class="substance-tab-btn" data-filter="good" id="tabFilterGood" style="color: var(--ink-good);">Good (<span id="tabCountGood">4</span>)</button>
+          </div>
+
+          <div class="substances-search-box">
+            <input type="text" id="substanceSearchInput" class="substances-search-input" placeholder="Search ingredient...">
+          </div>
+        </div>
+
+        <div class="substance-cards-list" id="substanceCardsContainer">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- 4. Body Impact & Swaps -->
+      <section class="dash-bottom-grid">
+        <div class="dash-bottom-card">
+          <div style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 900; border-bottom: var(--border-med); padding-bottom: 6px;">
+            BODY IMPACT METER
+          </div>
+          <div id="bodyMetersContainer" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
+        <div class="dash-bottom-card">
+          <div style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 900; border-bottom: var(--border-med); padding-bottom: 6px;">
+            SMART HEALTHIER SWAPS
+          </div>
+          <div id="swapsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+      </section>
+
+      <!-- 5. 8-Point Inspection & Verification Dossier (Hackathon MVP) -->
+      <section class="consumer-dossier-section" id="consumerDossierSection">
+        <div class="metrology-collapsible-bar" id="btnToggleMetrology" role="button" tabindex="0" aria-expanded="true" aria-controls="metrologyDrawerBody">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="mono" style="font-weight: 900; font-size: 0.72rem; color: var(--paper-bg); background: var(--ink); padding: 3px 8px; letter-spacing: 0.05em;">HACKATHON MVP AUDIT</span>
+            <span style="font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em;">
+              8-POINT INSPECTION &amp; VERIFICATION DOSSIER
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="dossier-summary-pill mono status-harm" id="dossierOverallStatus">FLAGGED</span>
+            <span id="metrologyToggleText" class="mono" style="font-weight: 700;">COLLAPSE ▴</span>
+          </div>
+        </div>
+
+        <div class="metrology-drawer-body open" id="metrologyDrawerBody">
+          <!-- Backwards-compatible metrology quick bar (hidden or inline) -->
+          <div style="display: none;">
+            <span id="metroNumeral">3.00 mm</span>
+            <span id="metroMrp">Inclusive of all taxes</span>
+            <span id="metroFssai">10019022009842</span>
+          </div>
+
+          <!-- 8 Prioritized MVP Cards Grid -->
+          <div class="consumer-dossier-grid">
+            <!-- 1. Product Information -->
+            <div class="dossier-card" id="cdCardProdInfo">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">01</span>
+                  <h3 class="dossier-card-title">PRODUCT INFORMATION</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-pass">VERIFIED</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyProdInfo"></div>
+            </div>
+
+            <!-- 2. Inspection Summary -->
+            <div class="dossier-card" id="cdCardInspSummary">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">02</span>
+                  <h3 class="dossier-card-title">INSPECTION SUMMARY</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-warn" id="cdBadgeInspSummary">CAUTION</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyInspSummary"></div>
+            </div>
+
+            <!-- 3. Detected Declarations -->
+            <div class="dossier-card" id="cdCardDetected">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">03</span>
+                  <h3 class="dossier-card-title">DETECTED DECLARATIONS</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-harm" id="cdBadgeDetected">DISCREPANCY</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyDetected"></div>
+            </div>
+
+            <!-- 4. Legal Metrology Checks -->
+            <div class="dossier-card" id="cdCardMetrology">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">04</span>
+                  <h3 class="dossier-card-title">LEGAL METROLOGY CHECKS</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-pass" id="cdBadgeMetrology">COMPLIANT</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyMetrology"></div>
+            </div>
+
+            <!-- 5. FSSAI Checks -->
+            <div class="dossier-card" id="cdCardFssai">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">05</span>
+                  <h3 class="dossier-card-title">FSSAI CHECKS</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-pass" id="cdBadgeFssai">ACTIVE LIC</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyFssai"></div>
+            </div>
+
+            <!-- 6. Issues & Alerts -->
+            <div class="dossier-card" id="cdCardIssues">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">06</span>
+                  <h3 class="dossier-card-title">ISSUES &amp; ALERTS</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-harm" id="cdBadgeIssues">ALERTS (2)</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyIssues"></div>
+            </div>
+
+            <!-- 7. Evidence + Rule Reference -->
+            <div class="dossier-card" id="cdCardEvidence">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">07</span>
+                  <h3 class="dossier-card-title">EVIDENCE + RULE REFERENCE</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-pass">WHO / ICMR</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyEvidence"></div>
+            </div>
+
+            <!-- 8. Inspector Verification + Report -->
+            <div class="dossier-card" id="cdCardVerification">
+              <div class="dossier-card-head">
+                <div class="dossier-head-left">
+                  <span class="dossier-num">08</span>
+                  <h3 class="dossier-card-title">INSPECTOR VERIFICATION + REPORT</h3>
+                </div>
+                <span class="dossier-badge-pill dossier-badge-warn" id="cdBadgeVerification">AUDITED</span>
+              </div>
+              <div class="dossier-card-body" id="cdBodyVerification"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL 1: SCANNER MODAL (LIVE CAMERA BARCODE SCANNER)
+       ======================================================================== -->
+  <div class="scanner-modal-backdrop" id="scannerModal" role="dialog" aria-modal="true" aria-labelledby="scannerModalTitle">
+    <div class="scanner-modal-card">
+      <div class="scanner-modal-header">
+        <h2 class="modal-title-text" id="scannerModalTitle">PACKAGE SCANNER</h2>
+        <button id="btnCloseScannerModal" class="modal-close-btn" type="button" aria-label="Close scanner">✕</button>
+      </div>
+
+      <div class="scanner-modal-body" style="padding: 0;">
+
+        <!-- STATE 1: LIVE CAMERA (PRIMARY) -->
+        <div id="scanCameraState" style="display: none;">
+          <!-- Camera Viewport -->
+          <div style="position: relative; width: 100%; background: #000; overflow: hidden; border-radius: 0 0 2px 2px;">
+            <video id="scannerVideo" autoplay muted playsinline
+              style="width: 100%; max-height: 340px; object-fit: cover; display: block;"></video>
+
+            <!-- Corner Frame Brackets -->
+            <div style="position:absolute;top:16px;left:16px;width:36px;height:36px;border-top:3px solid #C92A2A;border-left:3px solid #C92A2A;"></div>
+            <div style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-top:3px solid #C92A2A;border-right:3px solid #C92A2A;"></div>
+            <div style="position:absolute;bottom:16px;left:16px;width:36px;height:36px;border-bottom:3px solid #C92A2A;border-left:3px solid #C92A2A;"></div>
+            <div style="position:absolute;bottom:16px;right:16px;width:36px;height:36px;border-bottom:3px solid #C92A2A;border-right:3px solid #C92A2A;"></div>
+
+            <!-- Animated Scan Line -->
+            <div id="scanLaserLine" style="
+              position: absolute;
+              left: 16px; right: 16px;
+              height: 2px;
+              background: linear-gradient(90deg, transparent, #C92A2A, transparent);
+              box-shadow: 0 0 8px 2px rgba(201,42,42,0.7);
+              animation: scanLine 2s ease-in-out infinite;
+              top: 50%;
+            "></div>
+
+            <!-- Status Label -->
+            <div id="scanCameraStatusLabel" style="
+              position: absolute;
+              bottom: 10px; left: 0; right: 0;
+              text-align: center;
+              font-family: monospace;
+              font-size: 0.72rem;
+              font-weight: 700;
+              letter-spacing: 0.08em;
+              color: rgba(255,255,255,0.85);
+              text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            ">POINT CAMERA AT BARCODE</div>
+          </div>
+
+          <!-- Camera Controls Bar -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid rgba(17,17,16,0.12);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="cameraSelect" style="
+                font-family: monospace; font-size: 0.72rem; font-weight: 700;
+                background: var(--paper-bg, #fff); color: var(--ink, #111110); border: 1px solid rgba(17,17,16,0.3);
+                padding: 4px 8px; cursor: pointer; letter-spacing: 0.04em;
+              "></select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button id="btnUploadInstead" type="button" style="
+                font-family: monospace; font-size: 0.7rem; font-weight: 700;
+                background: none; border: 1px dashed rgba(17,17,16,0.3);
+                padding: 4px 10px; cursor: pointer; letter-spacing: 0.04em;
+                color: var(--ink-muted);
+              ">UPLOAD IMAGE INSTEAD</button>
+            </div>
+          </div>
+
+          <!-- Demo presets still accessible -->
+          <div style="padding: 10px 14px; border-top: 1px solid rgba(17,17,16,0.08);">
+            <div style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: var(--ink-muted); margin-bottom: 6px;">OR TRY DEMO SAMPLE:</div>
+            <div class="modal-shelf-presets-row">
+              <button class="preset-pill-btn" data-scan-id="consumer-1" type="button"><span>VOLT SURGE</span><span style="color:var(--ink-harm);">[38]</span></button>
+              <button class="preset-pill-btn" data-scan-id="consumer-2" type="button"><span>SPARK COLA</span><span style="color:var(--ink-safe);">[78]</span></button>
+              <button class="preset-pill-btn" data-scan-id="consumer-3" type="button"><span>NATURESIP</span><span style="color:var(--ink-warn);">[52]</span></button>
+              <button class="preset-pill-btn" data-scan-id="consumer-4" type="button"><span>CRISPBITE</span><span style="color:var(--ink-warn);">[58]</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATE 2: UPLOAD FALLBACK (shown when camera denied or user chooses it) -->
+        <div id="scanReadyState" style="padding: 16px;">
+          <div class="scan-dropzone" id="scanDropzone" tabindex="0" role="button" aria-label="Upload product image">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div>
+              <div class="dropzone-title">UPLOAD BARCODE / LABEL PHOTO</div>
+              <div class="dropzone-sub">JPEG, PNG or WEBP — barcode will be decoded automatically</div>
+            </div>
+            <button class="btn-cta-primary" style="font-size: 0.8rem; padding: 6px 14px;" type="button" id="btnTriggerFileInput">
+              SELECT FILE
+            </button>
+            <input type="file" id="modalFileInput" style="display: none;" accept="image/*">
+          </div>
+          <div style="text-align:center; margin-top: 10px;">
+            <button id="btnTryCameraAgain" type="button" style="
+              font-family: monospace; font-size: 0.7rem; font-weight: 700;
+              background: none; border: none; cursor: pointer;
+              color: var(--ink-muted); text-decoration: underline;
+            ">← TRY CAMERA SCANNER AGAIN</button>
+          </div>
+        </div>
+
+        <!-- STATE 3: ANALYZING LOADER -->
+        <div id="scanActiveLaserState" style="display: none; padding: 48px 16px; text-align: center;">
+          <div style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 900; margin-bottom: 8px;">
+            ANALYZING PRODUCT...
+          </div>
+          <div class="mono" style="font-size: 0.8rem; color: var(--ink-muted);" id="scanProgressTickerText">
+            Fetching product data...
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes scanLine {
+      0%   { top: 20%; opacity: 0.4; }
+      50%  { top: 80%; opacity: 1; }
+      100% { top: 20%; opacity: 0.4; }
+    }
+  </style>
+
+  <!-- ========================================================================
+       MODAL 2: COMPARISON MODAL
+       ======================================================================== -->
+  <div class="scanner-modal-backdrop" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
+    <div class="scanner-modal-card">
+      <div class="scanner-modal-header">
+        <h2 class="modal-title-text" id="compareModalTitle">HEAD-TO-HEAD COMPARISON</h2>
+        <button id="btnCloseCompareModal" class="modal-close-btn" type="button" aria-label="Close comparison">✕</button>
+      </div>
+      <div class="scanner-modal-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;" id="compareGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: SCAN HISTORY MODAL (MY SCANS)
+       ======================================================================== -->
+  <div class="scanner-modal-backdrop" id="scansModal" role="dialog" aria-modal="true" aria-labelledby="scansModalTitle">
+    <div class="scanner-modal-card">
+      <div class="scanner-modal-header">
+        <h2 class="modal-title-text" id="scansModalTitle">SAVED SCAN HISTORY</h2>
+        <button id="btnCloseScansModal" class="modal-close-btn" type="button" aria-label="Close scan history">✕</button>
+      </div>
+      <div class="scanner-modal-body">
+        <div id="scansModalList" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;">
+          <div style="text-align: center; color: var(--ink-muted); font-family: var(--font-mono); padding: 24px;">Loading scan records...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="dossier_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

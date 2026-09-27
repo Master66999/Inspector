@@ -1,0 +1,59 @@
+services:
+  # ============================================================================
+  # 1. PackCheck Frontend & Node.js Server
+  # Serves: HTML, CSS, JS frontend + /api/auth + /api/scans
+  # ============================================================================
+  - type: web
+    name: packcheck-web
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      # Database connection (e.g., Aiven, PlanetScale, Clever Cloud, or Railway MySQL)
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_NAME
+        value: packcheck
+      # Optional: Set to the URL of the Python service (e.g. https://packcheck-ai-backend.onrender.com)
+      - key: PYTHON_API_URL
+        sync: false
+
+  # ============================================================================
+  # 2. PackCheck Python FastAPI Service (AI Scanner & Rule Engine)
+  # Serves: /api/scan, /api/products, /api/analyze, /api/ocr, etc.
+  # ============================================================================
+  - type: web
+    name: packcheck-ai-backend
+    env: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JEV_API_KEY
+        sync: false
+      - key: OPENFOODFACTS_BASE_URL
+        value: "https://world.openfoodfacts.org/api/v2"
+      - key: OPENFOODFACTS_USER_AGENT
+        value: "PackCheck - Food and Beverage Scanner - Version 1.0"

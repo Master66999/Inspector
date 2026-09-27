@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PackCheck — Sign In</title>
+  <meta name="description"
+    content="Sign in to PackCheck — Consumer food label scanner or Industry compliance dashboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="industry.css">
+  <style>
+    /* ── Login-page-specific overrides ────────────────────────── */
+    .login-root {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    /* LEFT PANEL — branding / tagline */
+    .login-left {
+      background: var(--ink);
+      color: var(--paper-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 52px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-left-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(245, 242, 235, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 242, 235, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .login-left-brand {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .login-brand-stamp {
+      background: var(--paper-bg);
+      color: var(--ink);
+      padding: 8px 14px;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.4rem;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .login-brand-sub {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: rgba(245, 242, 235, 0.5);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .login-left-hero {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .login-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-harm);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .login-eyebrow-line {
+      width: 28px;
+      height: 2px;
+      background: var(--ink-harm);
+    }
+
+    .login-headline {
+      font-family: var(--font-hero), var(--font-display);
+      font-size: clamp(2.6rem, 4.5vw, 4.2rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 0.92;
+      text-transform: uppercase;
+      color: var(--paper-bg);
+    }
+
+    .login-headline .accent {
+      color: var(--ink-harm);
+    }
+
+    .login-tagline {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: rgba(245, 242, 235, 0.55);
+      line-height: 1.6;
+      max-width: 340px;
+      font-weight: 400;
+    }
+
+    .login-stats-row {
+      display: flex;
+      gap: 28px;
+      margin-top: 8px;
+    }
+
+    .login-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .login-stat-num {
+      font-family: var(--font-mono);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--paper-bg);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.04em;
+    }
+
+    .login-stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(245, 242, 235, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .login-left-footer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .login-bench-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(245, 242, 235, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* Corner reticles on left panel */
+    .login-reticle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      z-index: 2;
+      border-color: rgba(245, 242, 235, 0.2);
+    }
+
+    .login-reticle.tl {
+      top: 20px;
+      left: 20px;
+      border-top: 1.5px solid;
+      border-left: 1.5px solid;
+    }
+
+    .login-reticle.tr {
+      top: 20px;
+      right: 20px;
+      border-top: 1.5px solid;
+      border-right: 1.5px solid;
+    }
+
+    .login-reticle.bl {
+      bottom: 20px;
+      left: 20px;
+      border-bottom: 1.5px solid;
+      border-left: 1.5px solid;
+    }
+
+    .login-reticle.br {
+      bottom: 20px;
+      right: 20px;
+      border-bottom: 1.5px solid;
+      border-right: 1.5px solid;
+    }
+
+    /* RIGHT PANEL — form */
+    .login-right {
+      background: var(--paper-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 52px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .login-form-wrap {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Portal Switcher */
+    .portal-switcher {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: var(--border-heavy);
+      margin-bottom: 28px;
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    .portal-tab {
+      padding: 14px 16px;
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: var(--ink-muted);
+      background: var(--paper-surface);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .portal-tab+.portal-tab {
+      border-left: var(--border-heavy);
+    }
+
+    .portal-tab-icon {
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .portal-tab-sub {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      opacity: 0.6;
+    }
+
+    .portal-tab.active {
+      background: var(--ink);
+      color: var(--paper-bg);
+    }
+
+    .portal-tab.active .portal-tab-sub {
+      opacity: 0.6;
+    }
+
+    .portal-tab:hover:not(.active) {
+      background: var(--paper-dark);
+      color: var(--ink);
+    }
+
+    .portal-tab:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: -3px;
+    }
+
+    /* Form header */
+    .login-form-header {
+      margin-bottom: 24px;
+    }
+
+    .login-form-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .login-form-title {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    /* Industry sub-role selector */
+    .industry-role-row {
+      display: none;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .industry-role-row.visible {
+      display: flex;
+    }
+
+    .role-pill {
+      flex: 1;
+      padding: 10px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-muted);
+      background: var(--paper-surface);
+      border: var(--border-med);
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+      text-align: center;
+    }
+
+    .role-pill:hover:not(.active) {
+      background: var(--paper-dark);
+      color: var(--ink);
+    }
+
+    .role-pill.active {
+      background: var(--ink-safe);
+      color: #fff;
+      border-color: var(--ink-safe);
+    }
+
+    .role-pill:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    /* Input fields */
+    .login-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .login-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .login-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-muted);
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--paper-surface);
+      border: var(--border-med);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      letter-spacing: 0.01em;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+
+    .login-input::placeholder {
+      color: var(--ink-faint);
+      font-weight: 400;
+    }
+
+    .login-input.error {
+      border-color: var(--ink-harm);
+      box-shadow: 3px 3px 0 var(--ink-harm);
+    }
+
+    /* Password wrapper */
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap .login-input {
+      padding-right: 44px;
+    }
+
+    .btn-toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px;
+      transition: color 0.15s ease;
+    }
+
+    .btn-toggle-pw:hover {
+      color: var(--ink);
+    }
+
+    /* Error message */
+    .login-error-msg {
+      display: none;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--ink-harm);
+      background: var(--bg-harm);
+      border: 1.5px solid var(--ink-harm);
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      letter-spacing: 0.02em;
+    }
+
+    .login-error-msg.visible {
+      display: block;
+    }
+
+    /* Submit button */
+    .login-submit-btn {
+      width: 100%;
+      padding: 16px 24px;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--paper-bg);
+      background: var(--ink);
+      border: var(--border-heavy);
+      box-shadow: 5px 5px 0 rgba(17, 17, 16, 0.35);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-submit-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--ink-harm);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.25s ease;
+      z-index: 0;
+    }
+
+    .login-submit-btn:hover::after {
+      transform: scaleX(1);
+    }
+
+    .login-submit-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 7px 7px 0 rgba(17, 17, 16, 0.35);
+    }
+
+    .login-submit-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0 rgba(17, 17, 16, 0.35);
+    }
+
+    .login-submit-btn:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .login-submit-btn span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-submit-arrow {
+      font-size: 1.1rem;
+      position: relative;
+      z-index: 1;
+      transition: transform 0.2s ease;
+    }
+
+    .login-submit-btn:hover .login-submit-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Loading state */
+    .login-submit-btn.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* Demo credentials box */
+    .demo-creds {
+      margin-top: 20px;
+      padding: 12px 14px;
+      background: var(--paper-surface);
+      border: var(--border-hairline);
+      border-left: 3px solid var(--ink-safe);
+    }
+
+    .demo-creds-title {
+      font-family: var(--font-mono);
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-muted);
+      margin-bottom: 8px;
+    }
+
+    .demo-creds-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .demo-creds-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .demo-creds-label {
+      font-family: var(--font-mono);
+      font-size: 0.67rem;
+      color: var(--ink-muted);
+    }
+
+    .demo-creds-val {
+      font-family: var(--font-mono);
+      font-size: 0.67rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--paper-dark);
+      padding: 1px 6px;
+      cursor: pointer;
+      border: 1px solid rgba(17, 17, 16, 0.15);
+      transition: background 0.1s ease;
+      letter-spacing: 0.02em;
+    }
+
+    .demo-creds-val:hover {
+      background: var(--ink);
+      color: var(--paper-bg);
+    }
+
+    .demo-creds-divider {
+      height: 1px;
+      background: var(--paper-dark);
+      border: none;
+      border-top: 1px solid rgba(17, 17, 16, 0.1);
+      margin: 8px 0;
+    }
+
+    /* Back link */
+    .login-right-footer {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .login-switch-link {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease;
+      background: none;
+      border: none;
+    }
+
+    .login-switch-link:hover {
+      color: var(--ink);
+    }
+
+    /* ── Animated scan line on left panel ── */
+    .login-scan-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--ink-harm) 50%, transparent 100%);
+      opacity: 0.4;
+      animation: scanDown 4s ease-in-out infinite;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    @keyframes scanDown {
+      0% {
+        top: 10%;
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 0.4;
+      }
+
+      80% {
+        opacity: 0.4;
+      }
+
+      100% {
+        top: 90%;
+        opacity: 0;
+      }
+    }
+
+    /* ── Success flash ── */
+    .login-success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--ink);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .login-success-overlay.active {
+      display: flex;
+      animation: successFlash 0.4s ease;
+    }
+
+    @keyframes successFlash {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .login-success-text {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--paper-bg);
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    .login-success-sub {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: rgba(245, 242, 235, 0.5);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .login-root {
+        grid-template-columns: 1fr;
+      }
+
+      .login-left {
+        display: none;
+      }
+
+      .login-right {
+        min-height: 100vh;
+        padding: 40px 28px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .login-right {
+        padding: 32px 20px;
+      }
+
+      .portal-tab {
+        padding: 12px 8px;
+        font-size: 0.78rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="responsive.css">
+</head>
+
+<body style="background:var(--paper-bg);overflow-x:hidden;">
+
+  <!-- Success overlay (shown briefly during redirect) -->
+  <div class="login-success-overlay" id="successOverlay" role="status" aria-live="assertive">
+    <div class="login-success-text" id="successText">ACCESS GRANTED</div>
+    <div class="login-success-sub" id="successSub">Redirecting…</div>
+  </div>
+
+  <div class="login-root">
+
+    <!-- ====== LEFT PANEL — Branding ====== -->
+    <aside class="login-left" aria-hidden="true">
+      <div class="login-left-grid"></div>
+      <div class="login-scan-line"></div>
+      <div class="login-reticle tl"></div>
+      <div class="login-reticle tr"></div>
+      <div class="login-reticle bl"></div>
+      <div class="login-reticle br"></div>
+
+      <!-- Brand -->
+      <div class="login-left-brand">
+        <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;"
+          title="Return to Landing Page">
+          <div class="login-brand-stamp">PACKCHECK</div>
+          <div class="login-brand-sub">Food Intelligence Platform</div>
+        </a>
+      </div>
+
+      <!-- Hero copy -->
+      <div class="login-left-hero">
+        <div class="login-eyebrow">
+          <div class="login-eyebrow-line"></div>
+          <span>Ingredient Reality Engine</span>
+        </div>
+        <h1 class="login-headline">
+          THE FRONT<br>
+          LIES.<br>
+          THE BACK<br>
+          TELLS THE<br>
+          <span class="accent">TRUTH.</span>
+        </h1>
+        <p class="login-tagline">
+          Scan any food packet in 2 seconds. Get an honest 0–100 CleanScore. Industry teams — monitor SKU compliance,
+          flag harmful ingredients, and audit products before they ship.
+        </p>
+        <div class="login-stats-row">
+          <div class="login-stat">
+            <div class="login-stat-num">4</div>
+            <div class="login-stat-label">SKUs Tracked</div>
+          </div>
+          <div class="login-stat">
+            <div class="login-stat-num">WHO</div>
+            <div class="login-stat-label">Benchmarks</div>
+          </div>
+          <div class="login-stat">
+            <div class="login-stat-num">FSSAI</div>
+            <div class="login-stat-label">Standards</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="login-left-footer">
+        <span class="login-bench-tag">Benchmarks: WHO 2024 · ICMR-NIN · FSSAI · For guidance only · Not medical
+          advice</span>
+      </div>
+    </aside>
+
+    <!-- ====== RIGHT PANEL — Form ====== -->
+    <section class="login-right">
+      <div class="login-form-wrap">
+
+        <!-- Back to Landing Page Navigation -->
+        <div style="margin-bottom: 20px;">
+          <a href="index.html" class="mono"
+            style="font-size: 0.78rem; font-weight: 700; color: var(--ink-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.04em; transition: color 0.15s ease;"
+            onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--ink-muted)'">
+            ← BACK TO LANDING PAGE
+          </a>
+        </div>
+
+        <!-- Portal Switcher -->
+        <div class="portal-switcher" role="tablist" aria-label="Select portal">
+          <button class="portal-tab active" id="tabConsumer" role="tab" type="button" aria-selected="true"
+            aria-controls="loginForm" data-portal="consumer">
+            <span class="portal-tab-icon">📱</span>
+            <span>CONSUMER</span>
+            <span class="portal-tab-sub">Food Scanner</span>
+          </button>
+          <button class="portal-tab" id="tabIndustry" role="tab" type="button" aria-selected="false"
+            aria-controls="loginForm" data-portal="industry">
+            <span class="portal-tab-icon">🏭</span>
+            <span>INDUSTRY</span>
+            <span class="portal-tab-sub">Compliance Portal</span>
+          </button>
+        </div>
+
+        <!-- Form header -->
+        <!-- Form header -->
+        <div class="login-form-header">
+          <div class="login-form-eyebrow" id="formEyebrow">Consumer Portal</div>
+          <div class="login-form-title" id="formTitle">SIGN IN</div>
+        </div>
+
+        <!-- Auth Mode Toggle (Sign In vs Create Account) -->
+        <div class="auth-mode-toggle" id="authModeToggle"
+          style="display:flex;gap:0;border:var(--border-med);margin-bottom:16px;background:var(--paper-surface);"
+          role="tablist" aria-label="Sign in or register">
+          <button type="button" id="btnModeLogin" class="auth-mode-btn active"
+            style="flex:1;padding:8px 12px;font-family:var(--font-mono);font-size:0.75rem;font-weight:700;background:var(--ink);color:var(--paper-bg);border:none;cursor:pointer;"
+            role="tab" aria-selected="true">SIGN IN</button>
+          <button type="button" id="btnModeSignup" class="auth-mode-btn"
+            style="flex:1;padding:8px 12px;font-family:var(--font-mono);font-size:0.75rem;font-weight:700;background:transparent;color:var(--ink-muted);border:none;cursor:pointer;"
+            role="tab" aria-selected="false">CREATE ACCOUNT</button>
+        </div>
+
+        <!-- Industry role selector (hidden for consumer) -->
+        <div class="industry-role-row" id="industryRoleRow" role="group" aria-label="Select your industry role">
+          <button class="role-pill active" data-irole="manufacturer" type="button">
+            🏭&nbsp; Manufacturer
+          </button>
+          <button class="role-pill" data-irole="inspector" type="button">
+            🔍&nbsp; Inspector
+          </button>
+        </div>
+
+        <!-- Error message -->
+        <div class="login-error-msg" id="loginError" role="alert"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm" novalidate aria-label="Authentication form">
+          <div class="login-field-group">
+            <div class="login-field" id="nameFieldGroup" style="display: none;">
+              <label class="login-label" for="loginName">Full Name</label>
+              <input type="text" id="loginName" class="login-input" placeholder="e.g. Maya Lin" autocomplete="name">
+            </div>
+
+            <div class="login-field">
+              <label class="login-label" for="loginEmail">Email Address</label>
+              <input type="email" id="loginEmail" class="login-input" placeholder="you@example.com" autocomplete="email"
+                required aria-required="true" aria-describedby="loginError">
+            </div>
+
+            <div class="login-field">
+              <label class="login-label" for="loginPassword">Password</label>
+              <div class="password-wrap">
+                <input type="password" id="loginPassword" class="login-input" placeholder="Enter password"
+                  autocomplete="current-password" required aria-required="true" aria-describedby="loginError">
+                <button type="button" class="btn-toggle-pw" id="btnTogglePw"
+                  aria-label="Toggle password visibility">SHOW</button>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="login-submit-btn" id="loginSubmitBtn" aria-label="Sign in">
+            <span>SIGN IN</span>
+            <span class="login-submit-arrow" aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <!-- Demo credentials -->
+        <div class="demo-creds" id="demoCreds">
+          <div class="demo-creds-title">Demo Credentials — Click to autofill</div>
+
+          <div id="consumerDemoCreds">
+            <div class="demo-creds-row">
+              <span class="demo-creds-label">Email</span>
+              <span class="demo-creds-val" data-fill="email" data-val="user@packcheck.in">user@packcheck.in</span>
+            </div>
+            <div class="demo-creds-row">
+              <span class="demo-creds-label">Password</span>
+              <span class="demo-creds-val" data-fill="password" data-val="scan123">scan123</span>
+            </div>
+          </div>
+
+          <div id="industryDemoCreds" style="display:none;">
+            <div class="demo-creds-row">
+              <span class="demo-creds-label">Manufacturer</span>
+              <span class="demo-creds-val" data-fill="email" data-val="mfg@packcheck.in">mfg@packcheck.in</span>
+            </div>
+            <div class="demo-creds-row">
+              <span class="demo-creds-label">Inspector</span>
+              <span class="demo-creds-val" data-fill="email"
+                data-val="inspector@packcheck.in">inspector@packcheck.in</span>
+            </div>
+            <hr class="demo-creds-divider">
+            <div class="demo-creds-row">
+              <span class="demo-creds-label">Password (both)</span>
+              <span class="demo-creds-val" data-fill="password" data-val="industry123">industry123</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-right-footer">
+          <button type="button" class="login-switch-link" id="btnSkipLogin"
+            aria-label="Continue as guest without signing in">Continue as guest (no account needed)</button>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ── Demo accounts ──────────────────────────────────────────────────────
+      const DEMO_ACCOUNTS = [
+        { email: 'user@packcheck.in', password: 'scan123', portal: 'consumer', role: 'consumer', name: 'Demo User' },
+        { email: 'mfg@packcheck.in', password: 'industry123', portal: 'industry', role: 'manufacturer', name: 'Manufacturer User' },
+        { email: 'inspector@packcheck.in', password: 'industry123', portal: 'industry', role: 'inspector', name: 'Inspector User' },
+      ];
+
+      // ── State ──────────────────────────────────────────────────────────────
+      let activePortal = 'consumer';   // 'consumer' | 'industry'
+      let activeIRole = 'manufacturer'; // 'manufacturer' | 'inspector'
+      let authMode = 'login';        // 'login' | 'signup'
+
+      // ── Refs ───────────────────────────────────────────────────────────────
+      const tabConsumer = document.getElementById('tabConsumer');
+      const tabIndustry = document.getElementById('tabIndustry');
+      const btnModeLogin = document.getElementById('btnModeLogin');
+      const btnModeSignup = document.getElementById('btnModeSignup');
+      const nameFieldGroup = document.getElementById('nameFieldGroup');
+      const nameInput = document.getElementById('loginName');
+      const formEyebrow = document.getElementById('formEyebrow');
+      const formTitle = document.getElementById('formTitle');
+      const industryRoleRow = document.getElementById('industryRoleRow');
+      const emailInput = document.getElementById('loginEmail');
+      const passwordInput = document.getElementById('loginPassword');
+      const loginError = document.getElementById('loginError');
+      const loginForm = document.getElementById('loginForm');
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      const btnTogglePw = document.getElementById('btnTogglePw');
+      const successOverlay = document.getElementById('successOverlay');
+      const successText = document.getElementById('successText');
+      const successSub = document.getElementById('successSub');
+      const consumerDemo = document.getElementById('consumerDemoCreds');
+      const industryDemo = document.getElementById('industryDemoCreds');
+      const btnSkipLogin = document.getElementById('btnSkipLogin');
+
+      // ── Mode Switcher (Sign In vs Create Account) ──────────────────────────
+      function setAuthMode(mode) {
+        authMode = mode;
+        clearError();
+        if (mode === 'signup') {
+          btnModeSignup.classList.add('active');
+          btnModeSignup.style.background = 'var(--ink)';
+          btnModeSignup.style.color = 'var(--paper-bg)';
+          btnModeLogin.classList.remove('active');
+          btnModeLogin.style.background = 'transparent';
+          btnModeLogin.style.color = 'var(--ink-muted)';
+          nameFieldGroup.style.display = 'flex';
+          formTitle.textContent = 'CREATE ACCOUNT';
+          submitBtn.querySelector('span').textContent = 'CREATE ACCOUNT';
+          if (nameInput) nameInput.focus();
+        } else {
+          btnModeLogin.classList.add('active');
+          btnModeLogin.style.background = 'var(--ink)';
+          btnModeLogin.style.color = 'var(--paper-bg)';
+          btnModeSignup.classList.remove('active');
+          btnModeSignup.style.background = 'transparent';
+          btnModeSignup.style.color = 'var(--ink-muted)';
+          nameFieldGroup.style.display = 'none';
+          formTitle.textContent = 'SIGN IN';
+          submitBtn.querySelector('span').textContent = 'SIGN IN';
+        }
+      }
+
+      if (btnModeLogin) btnModeLogin.addEventListener('click', () => setAuthMode('login'));
+      if (btnModeSignup) btnModeSignup.addEventListener('click', () => setAuthMode('signup'));
+
+      // ── Portal switcher ────────────────────────────────────────────────────
+      function switchPortal(portal) {
+        activePortal = portal;
+
+        [tabConsumer, tabIndustry].forEach(t => {
+          const isActive = t.dataset.portal === portal;
+          t.classList.toggle('active', isActive);
+          t.setAttribute('aria-selected', isActive);
+        });
+
+        if (portal === 'industry') {
+          formEyebrow.textContent = 'Industry Portal';
+          industryRoleRow.classList.add('visible');
+          consumerDemo.style.display = 'none';
+          industryDemo.style.display = 'block';
+        } else {
+          formEyebrow.textContent = 'Consumer Portal';
+          industryRoleRow.classList.remove('visible');
+          consumerDemo.style.display = 'block';
+          industryDemo.style.display = 'none';
+        }
+
+        clearError();
+      }
+
+      tabConsumer.addEventListener('click', () => switchPortal('consumer'));
+      tabIndustry.addEventListener('click', () => switchPortal('industry'));
+
+      // ── Industry role pills ────────────────────────────────────────────────
+      document.querySelectorAll('.role-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activeIRole = pill.dataset.irole;
+          clearError();
+        });
+      });
+
+      // ── Password toggle ────────────────────────────────────────────────────
+      btnTogglePw.addEventListener('click', () => {
+        const isText = passwordInput.type === 'text';
+        passwordInput.type = isText ? 'password' : 'text';
+        btnTogglePw.textContent = isText ? 'SHOW' : 'HIDE';
+      });
+
+      // ── Demo credential autofill ──────────────────────────────────────────
+      document.querySelectorAll('.demo-creds-val[data-fill]').forEach(el => {
+        el.addEventListener('click', () => {
+          setAuthMode('login');
+          const field = el.dataset.fill;
+          const val = el.dataset.val;
+          if (field === 'email') { emailInput.value = val; emailInput.focus(); }
+          if (field === 'password') { passwordInput.value = val; }
+          clearError();
+          el.style.background = 'var(--ink-good)';
+          el.style.color = '#fff';
+          setTimeout(() => { el.style.background = ''; el.style.color = ''; }, 600);
+        });
+      });
+
+      // ── Error helpers ──────────────────────────────────────────────────────
+      function showError(msg) {
+        loginError.textContent = msg;
+        loginError.classList.add('visible');
+        emailInput.classList.add('error');
+        passwordInput.classList.add('error');
+      }
+
+      function clearError() {
+        loginError.classList.remove('visible');
+        emailInput.classList.remove('error');
+        passwordInput.classList.remove('error');
+      }
+
+      function redirect(session) {
+        sessionStorage.setItem('packcheck_auth', JSON.stringify(session));
+
+        successText.textContent = 'ACCESS GRANTED';
+        successSub.textContent = session.portal === 'industry'
+          ? `ENTERING INDUSTRY PORTAL — ${session.role.toUpperCase()} VIEW`
+          : 'ENTERING CONSUMER SCANNER';
+
+        successOverlay.classList.add('active');
+
+        setTimeout(() => {
+          if (session.portal === 'industry') {
+            sessionStorage.setItem('packcheck_industry_role', session.role);
+            window.location.href = 'industry.html';
+          } else {
+            window.location.href = 'index.html';
+          }
+        }, 900);
+      }
+
+      // ── Form submit with backend API & fallback ────────────────────────────
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const name = nameInput ? nameInput.value.trim() : '';
+
+        if (authMode === 'signup') {
+          if (!name || name.length < 2) {
+            showError('⚠ Please enter your full name (at least 2 characters).');
+            if (nameInput) nameInput.focus();
+            return;
+          }
+        }
+
+        if (!email) { showError('⚠ Please enter your email address.'); emailInput.focus(); return; }
+        if (!password) { showError('⚠ Please enter your password.'); passwordInput.focus(); return; }
+        if (password.length < 6) { showError('⚠ Password must be at least 6 characters.'); return; }
+
+        submitBtn.classList.add('loading');
+        submitBtn.querySelector('span').textContent = authMode === 'signup' ? 'CREATING ACCOUNT...' : 'VERIFYING...';
+
+        try {
+          const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+          const payload = authMode === 'signup'
+            ? { name, email, password }
+            : { email, password };
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (res.ok && data.user) {
+            const session = {
+              id: data.user.id,
+              name: data.user.name,
+              email: data.user.email,
+              portal: activePortal,
+              role: activePortal === 'industry' ? activeIRole : 'consumer'
+            };
+            redirect(session);
+            return;
+          }
+
+          // Server returned validation / credentials error
+          submitBtn.classList.remove('loading');
+          submitBtn.querySelector('span').textContent = authMode === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN';
+          showError('⚠ ' + (data.error || 'Authentication failed. Please check your credentials.'));
+        } catch (networkErr) {
+          // Fallback to local demo mode if backend is starting or offline
+          console.warn('[PackCheck Auth] Server API unavailable, attempting demo fallback:', networkErr);
+          setTimeout(() => {
+            const demoUser = DEMO_ACCOUNTS.find(a =>
+              a.email === email.toLowerCase() && a.password === password
+            );
+
+            if (demoUser) {
+              redirect({
+                id: 999,
+                email: demoUser.email,
+                name: demoUser.name,
+                portal: activePortal,
+                role: activePortal === 'industry' ? activeIRole : 'consumer'
+              });
+              return;
+            }
+
+            if (authMode === 'signup' && email && password.length >= 6) {
+              redirect({
+                id: 998,
+                email: email.toLowerCase(),
+                name: name || email.split('@')[0],
+                portal: activePortal,
+                role: activePortal === 'industry' ? activeIRole : 'consumer'
+              });
+              return;
+            }
+
+            submitBtn.classList.remove('loading');
+            submitBtn.querySelector('span').textContent = authMode === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN';
+            showError('⚠ Could not reach backend server and credentials not in demo database.');
+          }, 500);
+        }
+      });
+
+      // ── Skip / guest ───────────────────────────────────────────────────────
+      btnSkipLogin.addEventListener('click', () => {
+        const session = {
+          email: 'guest',
+          name: 'Guest',
+          portal: activePortal,
+          role: activePortal === 'industry' ? activeIRole : 'consumer',
+          guest: true
+        };
+        redirect(session);
+      });
+
+      // ── Keyboard: Enter on portal tabs ─────────────────────────────────────
+      [tabConsumer, tabIndustry].forEach(tab => {
+        tab.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click(); }
+          if (e.key === 'ArrowRight') tabIndustry.focus();
+          if (e.key === 'ArrowLeft') tabConsumer.focus();
+        });
+      });
+
+      // ── If already authenticated, skip login ──────────────────────────────
+      const existingAuth = sessionStorage.getItem('packcheck_auth');
+      if (existingAuth) {
+        try {
+          const sess = JSON.parse(existingAuth);
+          if (sess && sess.portal) {
+            // Already logged in — go straight to the last portal
+            // (uncomment the line below if you want auto-redirect)
+            // redirect(sess);
+          }
+        } catch (_) { }
+      }
+
+    })();
+  </script>
+
+</body>
+
+</html>

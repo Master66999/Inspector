@@ -1,0 +1,960 @@
+/* ==========================================================================
+   PACKCHECK — RESPONSIVE PATCH
+   Additive breakpoint layer. Does not override desktop layout.
+   Targets: 375px | 390px | 480px | 640px | 768px | 1024px | 1440px
+   ========================================================================== */
+
+/* ==========================================================================
+   0. GLOBAL OVERFLOW GUARD & TYPOGRAPHY
+   Prevents horizontal scroll from any element overflowing its container.
+   ========================================================================== */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+img, svg, video, canvas, embed, object, iframe {
+  max-width: 100%;
+}
+
+/* Prevent iOS Safari auto-zoom on form controls */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ==========================================================================
+   1. NAV — TOUCH TARGETS, SESSION INFO, OVERFLOW
+   ========================================================================== */
+
+/* Ensure nav actions don't overflow at mid-size */
+@media (max-width: 900px) {
+  .nav-actions {
+    gap: 8px;
+  }
+  /* Hide user name text, keep sign-out button */
+  #navUserName {
+    display: none;
+  }
+}
+
+/* Hamburger must be exactly 44×44 (WCAG 2.5.5) */
+.btn-mobile-nav-toggle {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Nav links hidden below 768 — hamburger shown */
+@media (max-width: 768px) {
+  .nav-links-menu {
+    display: none !important;
+  }
+  .btn-mobile-nav-toggle {
+    display: flex !important;
+  }
+  /* Hide secondary session controls from nav; they appear in mobile drawer */
+  #navUserInfo {
+    display: none !important;
+  }
+  /* Primary CTA: shrink text slightly so it fits */
+  #btnNavScan {
+    font-size: 0.82rem;
+    padding: 10px 14px;
+  }
+}
+
+/* Mobile drawer: bigger touch targets */
+.mobile-nav-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+}
+
+/* Session sign-out in mobile drawer */
+.mobile-nav-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: var(--border-hairline);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   2. HERO SECTION
+   ========================================================================== */
+
+/* At 768px hero already collapses to 1-col via existing rules.
+   We polish: headline uses clamp already, but button group on very small screens */
+@media (max-width: 480px) {
+  .hero-section.hero-video-bg-mode {
+    padding: 0 16px;
+  }
+  /* CTA group already stretches at 480 via existing rule — ensure min touch height */
+  .hero-btn-solid,
+  .hero-btn-outline {
+    min-height: 48px;
+    width: 100%;
+    justify-content: center;
+  }
+  /* Audit panel card: don't overflow */
+  .audit-panel-card {
+    max-width: 100%;
+  }
+  /* Facts tape: wrap gracefully */
+  .hero-facts-tape {
+    gap: 12px;
+  }
+  /* HUD bar: hide coords to save space */
+  .hud-coords,
+  .hud-telemetry-item:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .hero-main-headline {
+    font-size: clamp(1.85rem, 9vw, 2.2rem);
+  }
+  .hero-subhead-text {
+    font-size: 0.95rem;
+  }
+  .hero-section.hero-video-bg-mode {
+    padding: 0 14px;
+  }
+}
+
+/* ==========================================================================
+   3. SECTION PADDING — scale all heavy sections on mobile
+   ========================================================================== */
+@media (max-width: 768px) {
+  .truth-section,
+  .scan-process-section,
+  .pantry-section,
+  .compare-section,
+  .swaps-strip-section {
+    padding: 64px 16px;
+  }
+  .closing-manifesto-section {
+    padding: 80px 16px 90px;
+  }
+  .kinetic-problem-section {
+    padding: 64px 16px 80px;
+  }
+  .how-it-works-stack-section {
+    padding: 64px 16px 80px;
+  }
+  .how-section,
+  .proof-section {
+    padding: 64px 16px;
+  }
+  .closing-section {
+    padding: 80px 16px;
+  }
+  .site-real-footer {
+    padding: 20px 16px;
+  }
+  .section-label-header {
+    margin-bottom: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .truth-section,
+  .scan-process-section,
+  .pantry-section,
+  .compare-section,
+  .swaps-strip-section {
+    padding: 48px 16px;
+  }
+  .how-section,
+  .proof-section {
+    padding: 48px 16px;
+  }
+  .closing-section {
+    padding: 64px 16px;
+  }
+}
+
+/* ==========================================================================
+   4. FORENSIC DISSECTION GRID — already collapses at 1024, pad at mobile
+   ========================================================================== */
+@media (max-width: 480px) {
+  .dissection-chamber {
+    padding: 24px 16px;
+  }
+  .forensic-case-ribbon {
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+  .case-ribbon-tab {
+    min-width: 0;
+    border-right: none;
+    border-bottom: var(--border-med);
+  }
+  .case-ribbon-tab:last-child {
+    border-bottom: none;
+  }
+  /* Ledger rows: allow name to wrap */
+  .ledger-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .substance-desc {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* ==========================================================================
+   5. HOW-IT-WORKS STEPS GRID — already collapses at 1024
+   ========================================================================== */
+@media (max-width: 768px) {
+  .step-block {
+    padding: 40px 24px;
+  }
+}
+@media (max-width: 480px) {
+  .step-block {
+    padding: 32px 16px;
+  }
+  .step-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* ==========================================================================
+   6. STACK CARDS (HOW IT WORKS SCROLL)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Disable sticky stacking on small screens — just show as normal flow */
+  .stack-card {
+    position: relative;
+    top: 0 !important;
+  }
+  .stack-cards-container {
+    gap: 24px;
+  }
+  .card-copy-col {
+    padding: 28px 20px;
+  }
+  .card-visual-col {
+    padding: 24px 20px;
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-copy-col {
+    padding: 24px 16px;
+  }
+  .card-sub-title {
+    font-size: 1.4rem;
+  }
+}
+
+/* ==========================================================================
+   7. CONVEYOR / HORIZONTAL SECTION — disable horizontal scroll on mobile
+   ========================================================================== */
+@media (max-width: 768px) {
+  .horizontal-conveyor-section {
+    overflow: visible;
+  }
+  .conveyor-pin-container {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 40px 16px;
+  }
+  .conveyor-stage-track {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    gap: 16px;
+    padding-bottom: 12px;
+  }
+  .conveyor-stage-node {
+    flex: 0 0 min(300px, 85vw);
+    scroll-snap-align: start;
+  }
+}
+
+/* ==========================================================================
+   8. PANTRY SPECIMEN SHOWCASE
+   ========================================================================== */
+@media (max-width: 768px) {
+  .specimen-showcase-stage {
+    gap: 28px;
+  }
+  .pedestal-main-chamber {
+    padding: 24px 20px;
+    gap: 24px;
+  }
+  .pedestal-reticle-frame {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .specimen-catalog-item {
+    padding: 16px 18px;
+  }
+  .catalog-name {
+    font-size: 1rem;
+  }
+  .catalog-num {
+    font-size: 1rem;
+  }
+  .pedestal-main-chamber {
+    padding: 20px 16px;
+  }
+  /* Substance chips: allow wrapping */
+  .pedestal-substances-breakdown {
+    gap: 6px;
+  }
+  .substance-chip {
+    font-size: 0.68rem;
+    padding: 6px 10px;
+  }
+  /* Callout pins: hide on very small screens to avoid overlap */
+  .pedestal-callout-pin {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   9. FORENSIC BALANCE SHEET (COMPARE SECTION)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .monolith-staple,
+  .monolith-alternative {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .monolith-staple,
+  .monolith-alternative {
+    padding: 24px 16px;
+  }
+  .monolith-title {
+    font-size: 1.5rem;
+  }
+  .compare-bottom-action-bar button {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+  .compare-bottom-action-bar {
+    margin-top: 28px;
+    padding: 0 16px;
+  }
+}
+
+/* ==========================================================================
+   10. APOTHECARY SWAPS
+   ========================================================================== */
+@media (max-width: 768px) {
+  .apothecary-row {
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 16px;
+  }
+  .apothecary-row:hover {
+    padding-left: 16px; /* remove the hover indent on mobile */
+  }
+  .apothecary-row-right {
+    align-items: flex-start;
+  }
+  .apothecary-row-left {
+    gap: 16px;
+  }
+  .apothecary-name {
+    font-size: 1.15rem;
+  }
+  .apothecary-icon {
+    font-size: 1.8rem;
+  }
+}
+
+/* ==========================================================================
+   11. PROOF SECTION (FRONT vs BACK)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .proof-claim-block,
+  .proof-findings-block {
+    padding: 28px 16px;
+  }
+  .proof-claim-quote {
+    font-size: 1.6rem;
+  }
+  .proof-cta-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ==========================================================================
+   12. CLOSING SECTION
+   ========================================================================== */
+@media (max-width: 480px) {
+  .closing-headline {
+    font-size: clamp(2.4rem, 11vw, 3.5rem);
+  }
+  .btn-closing-main {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+    align-self: stretch;
+  }
+  .closing-sub {
+    font-size: 0.95rem;
+  }
+}
+
+/* ==========================================================================
+   13. SCANNER MODAL — full-height sheet on mobile
+   ========================================================================== */
+@media (max-width: 640px) {
+  .scanner-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .scanner-modal-card {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92dvh; /* Dynamic viewport height avoids keyboard issues */
+    max-height: 92vh;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scanner-modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  /* Bigger touch targets inside modal */
+  .preset-pill-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  .modal-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  /* Slide-up animation */
+  .scanner-modal-card {
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .scanner-modal-backdrop.open .scanner-modal-card {
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   14. COMPARE MODAL (if it exists as a modal)
+   ========================================================================== */
+@media (max-width: 640px) {
+  .compare-modal-card,
+  #compareModal .scanner-modal-card,
+  .insp-scanner-modal-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92dvh;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  #compareGrid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* ==========================================================================
+   15. CONSUMER DASHBOARD
+   ========================================================================== */
+
+/* Top bar: stack on narrow screens */
+@media (max-width: 640px) {
+  .dash-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .dash-container {
+    padding: 0 16px;
+    margin-top: 20px;
+    gap: 16px;
+  }
+}
+
+/* Product hero card: already collapses at 1024, add mobile padding */
+@media (max-width: 480px) {
+  .product-health-hero {
+    padding: 18px 16px;
+    gap: 18px;
+  }
+  .product-main-title {
+    font-size: 1.6rem;
+  }
+  .product-pack-visual-box {
+    width: 80px;
+    height: 100px;
+  }
+  .radial-score-box {
+    width: 90px;
+    height: 90px;
+  }
+  .score-large-number {
+    font-size: 1.6rem;
+  }
+}
+
+/* Pillar cards: 3-col → 2-col → 1-col */
+@media (max-width: 640px) {
+  .pillars-summary-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .pillars-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Substance card main row: stack on tiny screens */
+@media (max-width: 480px) {
+  .substance-card-main {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .substance-name {
+    font-size: 0.95rem;
+  }
+  /* Drawer grid: already 1-col at 768 via existing rule */
+  .substances-filter-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .substances-tabs {
+    flex-wrap: wrap;
+  }
+  .substances-search-box {
+    width: 100%;
+  }
+  .substances-search-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Substance card touch target */
+.substance-tab-btn {
+  min-height: 36px;
+}
+
+/* Swap item card: stack on mobile */
+@media (max-width: 480px) {
+  .swap-item-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+}
+
+/* ==========================================================================
+   16. DASHBOARD BOTTOM GRID — 2-col → 1-col (already at 768)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .dash-bottom-card {
+    padding: 18px 16px;
+  }
+}
+
+/* ==========================================================================
+   17. NUTRITION / RADAR SECTION
+   ========================================================================== */
+@media (max-width: 768px) {
+  .nutrition-scrub-container {
+    gap: 24px;
+  }
+  .cross-exam-stage {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* radar rows: allow horizontal scroll */
+  .radar-data-grid,
+  .nutritional-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ==========================================================================
+   18. INGREDIENTS SPOTLIGHT
+   ========================================================================== */
+@media (max-width: 768px) {
+  .spotlight-explanation-col {
+    position: relative !important;
+    top: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   19. KINETIC PROBLEM SECTION
+   ========================================================================== */
+@media (max-width: 480px) {
+  .kinetic-climax-banner {
+    padding: 24px 16px;
+  }
+  .kinetic-headline {
+    font-size: clamp(1.8rem, 8vw, 2.8rem);
+  }
+  .climax-headline {
+    font-size: 1.4rem;
+  }
+}
+
+/* ==========================================================================
+   20. GLOBAL INSPECTION HUD — hide on very small screens to avoid overlap
+   ========================================================================== */
+@media (max-width: 375px) {
+  .global-inspection-hud {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   21. FOOTER
+   ========================================================================== */
+@media (max-width: 480px) {
+  .site-real-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 16px;
+    font-size: 0.68rem;
+  }
+  .btn-back-to-top {
+    align-self: flex-end;
+  }
+}
+
+/* ==========================================================================
+   22. INDUSTRY DASHBOARD RESPONSIVE (extends industry.css)
+   ========================================================================== */
+
+/* Header: hide user label at mid-width */
+@media (max-width: 900px) {
+  #indNavUser {
+    display: none;
+  }
+}
+
+/* KPI strip: 4→2→1 */
+@media (max-width: 900px) {
+  .kpi-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .kpi-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Manufacturer table: horizontal scroll on mobile */
+@media (max-width: 768px) {
+  .mfg-content-row {
+    grid-template-columns: 1fr;
+  }
+  .ind-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ind-table {
+    min-width: 540px;
+  }
+  .mfg-detail-panel {
+    min-height: 360px;
+  }
+  .dvd-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dvd-table {
+    min-width: 480px;
+  }
+}
+
+/* Table toolbar: stack filters */
+@media (max-width: 640px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .table-toolbar-right {
+    flex-wrap: wrap;
+  }
+  .ind-search {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+  .ind-select {
+    flex: 1 1 auto;
+  }
+}
+
+/* Inspector layout: stack panels */
+@media (max-width: 768px) {
+  .insp-layout {
+    grid-template-columns: 1fr;
+  }
+  .insp-queue-panel {
+    max-height: 280px;
+  }
+}
+
+/* Industry header and actions: tablet & mobile adapt */
+@media (max-width: 768px) {
+  .ind-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+  .ind-header-center {
+    display: none;
+  }
+  .ind-header-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* Inspector action buttons: full width on tiny screens */
+@media (max-width: 480px) {
+  .insp-action-row {
+    flex-direction: column;
+  }
+  .insp-action-btn {
+    width: 100%;
+  }
+  .ind-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .role-switch-wrap {
+    order: 3;
+    width: 100%;
+  }
+  .role-switch-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* ==========================================================================
+   23. LOGIN PAGE RESPONSIVE
+   ========================================================================== */
+@media (max-width: 860px) {
+  .login-root {
+    grid-template-columns: 1fr;
+  }
+  .login-left {
+    display: none;
+  }
+  .login-right {
+    min-height: 100dvh;
+    min-height: 100vh;
+    padding: 40px 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-right {
+    padding: 32px 16px;
+  }
+  .portal-tab {
+    padding: 12px 8px;
+    font-size: 0.8rem;
+  }
+  .portal-switcher {
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .login-submit-btn {
+    padding: 14px 20px;
+  }
+  .role-pill {
+    padding: 8px 6px;
+    font-size: 0.66rem;
+  }
+}
+
+/* ==========================================================================
+   24. TOUCH INTERACTION FALLBACKS
+   ========================================================================== */
+
+/* Hover-only tooltips / callout pins: always visible on touch screens */
+@media (hover: none) and (pointer: coarse) {
+  /* Specimen catalog hover arrow: always show */
+  .catalog-arrow {
+    opacity: 1;
+  }
+  /* Remove transform-on-hover that has no tap analog */
+  .specimen-catalog-item:hover {
+    transform: none;
+  }
+  .apothecary-row:hover {
+    padding-left: 28px;
+    background: transparent;
+  }
+  /* Callout pins: show on touch (already hidden at 480px above, but show at 481-640) */
+  @media (min-width: 481px) {
+    .pedestal-callout-pin {
+      display: flex;
+    }
+  }
+  /* Audit panel: remove hover transform */
+  .audit-panel-card:hover {
+    transform: none;
+    border-color: rgba(255,255,255,0.22);
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.8), 0 16px 36px rgba(0,0,0,0.55);
+  }
+  /* Stack cards: remove sticky */
+  .stack-card {
+    position: relative !important;
+    top: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   25. PRINT (nice-to-have: prevent huge headlines breaking across pages)
+   ========================================================================== */
+@media print {
+  .site-nav,
+  .global-inspection-hud,
+  .mobile-nav-drawer,
+  .hero-bg-video-wrapper,
+  .conveyor-pulse-head,
+  .optical-laser-bar,
+  .active-laser-line {
+    display: none !important;
+  }
+  .hero-section.hero-video-bg-mode {
+    background: #fff;
+    color: #000;
+    min-height: 0;
+  }
+}
+
+/* ==========================================================================
+   26. TABLET LANDSCAPE (1024px) — fine-tune spacing
+   ========================================================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .how-section,
+  .proof-section,
+  .closing-section {
+    padding: 80px 40px;
+  }
+  .truth-section,
+  .scan-process-section,
+  .pantry-section,
+  .compare-section,
+  .swaps-strip-section {
+    padding: 80px 32px;
+  }
+  .forensic-dissection-grid {
+    grid-template-columns: 1fr;
+  }
+  .conveyor-stations-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .station-flow-arrow {
+    display: none;
+  }
+  /* Hero at 1024: dual-col (copy + audit panel) */
+  .hero-content-stage {
+    grid-template-columns: 1fr minmax(300px, 360px);
+    gap: 24px;
+  }
+  .hero-can-zone {
+    display: none;
+  }
+  /* Dashboard */
+  .dash-container {
+    padding: 0 24px;
+  }
+  .pillars-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ==========================================================================
+   27. SMALL PHONE (375px) — tightest fixes
+   ========================================================================== */
+@media (max-width: 375px) {
+  :root {
+    font-size: 15px; /* Slightly reduce base so all rem values scale down */
+  }
+  .brand-stamp {
+    font-size: 1.1rem;
+    padding: 5px 9px;
+  }
+  .brand-subline {
+    display: none;
+  }
+  .hero-main-headline {
+    font-size: clamp(1.75rem, 10vw, 2rem);
+  }
+  .section-hero-title,
+  .section-title {
+    font-size: clamp(1.8rem, 9vw, 2.5rem);
+  }
+  .closing-headline {
+    font-size: clamp(2.2rem, 10vw, 3rem);
+  }
+  .closing-giant-text {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+  /* Modals full-width on tiny phone */
+  .scanner-modal-card {
+    max-height: 95dvh;
+    max-height: 95vh;
+  }
+  /* Nav: minimal */
+  .site-nav {
+    padding: 0 12px;
+  }
+  #btnNavScan {
+    font-size: 0.75rem;
+    padding: 8px 10px;
+  }
+  /* Industry role gate: stack cards */
+  .role-cards-row {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PackCheck Industry — Compliance &amp; Audit Dashboard</title>
+  <meta name="description"
+    content="PackCheck Industry: Manufacturer compliance monitoring and third-party inspector audit workflow for food product SKUs.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="industry.css">
+  <link rel="stylesheet" href="responsive.css">
+
+  <!-- ZXing.js — Live Barcode Reader from Camera & Image -->
+  <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+
+  <!-- AUTH GUARD -->
+  <script>
+    (function () {
+      var auth = sessionStorage.getItem('packcheck_auth');
+      if (!auth) { window.location.replace('login.html'); return; }
+      try {
+        var s = JSON.parse(auth);
+        if (s.portal && s.portal !== 'industry') { window.location.replace('login.html'); }
+      } catch (_) { window.location.replace('login.html'); }
+    })();
+  </script>
+</head>
+
+<body class="industry-body">
+
+  <!-- ROLE GATE -->
+  <div id="roleGate" class="role-gate" role="dialog" aria-modal="true" aria-labelledby="roleGateTitle">
+    <div class="role-gate-inner">
+      <div class="role-gate-brand">
+        <span class="brand-stamp">PACKCHECK</span>
+        <span class="role-gate-pipe mono">/</span>
+        <span class="role-gate-subtitle mono">INDUSTRY PORTAL</span>
+      </div>
+      <h1 class="role-gate-headline" id="roleGateTitle">SELECT YOUR ROLE</h1>
+      <p class="role-gate-desc">Access is role-scoped. Choose how you interact with the compliance dashboard.</p>
+      <div class="role-cards-row">
+        <button class="role-card" id="roleCardManufacturer" type="button" data-role="manufacturer"
+          aria-label="Enter as Manufacturer">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <rect x="4" y="20" width="32" height="16" stroke="currentColor" stroke-width="2.5" />
+              <rect x="10" y="12" width="8" height="8" stroke="currentColor" stroke-width="2.5" />
+              <rect x="22" y="12" width="8" height="8" stroke="currentColor" stroke-width="2.5" />
+              <line x1="4" y1="36" x2="36" y2="36" stroke="currentColor" stroke-width="2.5" />
+            </svg>
+          </div>
+          <div class="role-card-label">MANUFACTURER</div>
+          <div class="role-card-desc mono">Manage your SKU portfolio, monitor compliance KPIs, and view declared vs
+            detected ingredient analysis.</div>
+          <div class="role-card-cta mono">ENTER MANUFACTURER VIEW &rarr;</div>
+        </button>
+        <button class="role-card" id="roleCardInspector" type="button" data-role="inspector"
+          aria-label="Enter as Inspector">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <circle cx="17" cy="17" r="10" stroke="currentColor" stroke-width="2.5" />
+              <line x1="24" y1="24" x2="36" y2="36" stroke="currentColor" stroke-width="2.5" />
+              <line x1="11" y1="17" x2="23" y2="17" stroke="currentColor" stroke-width="2" />
+              <line x1="17" y1="11" x2="17" y2="23" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </div>
+          <div class="role-card-label">INSPECTOR</div>
+          <div class="role-card-desc mono">Review product submissions, pass/flag/escalate items, and add notes for
+            products you audit. No ownership required.</div>
+          <div class="role-card-cta mono">ENTER INSPECTOR VIEW &rarr;</div>
+        </button>
+      </div>
+      <a href="index.html" class="role-gate-back mono">&larr; Back to Consumer App</a>
+    </div>
+  </div>
+
+  <!-- INDUSTRY SHELL -->
+  <div id="industryShell" class="industry-shell" style="display:none;" aria-hidden="true">
+
+    <!-- Dashboard Header -->
+    <header class="ind-header" id="indHeader">
+      <div class="ind-header-left">
+        <a href="index.html" class="ind-brand" aria-label="PackCheck home">
+          <span class="brand-stamp">PACKCHECK</span>
+          <span class="ind-header-pipe mono">/</span>
+          <span class="ind-header-ctx mono" id="indHeaderCtx">INDUSTRY</span>
+        </a>
+      </div>
+      <div class="ind-header-center mono" id="indHeaderBreadcrumb">
+        <span id="indActiveRole" class="role-badge-header"></span>
+        <span class="ind-bc-sep">&middot;</span>
+        <span id="indHeaderTimestamp"></span>
+      </div>
+      <div class="ind-header-right">
+        <div class="role-switch-wrap" id="roleSwitchWrap" role="group" aria-label="Switch active role">
+          <button class="role-switch-btn" id="btnRoleManuf" type="button" aria-pressed="false">MANUFACTURER</button>
+          <button class="role-switch-btn" id="btnRoleInspect" type="button" aria-pressed="false">INSPECTOR</button>
+        </div>
+        <!-- Audit Scanner button -->
+        <button id="btnHeaderScan" class="btn-cta-primary mono ind-header-scan-btn" type="button"
+          aria-label="Open inspector ingredient scanner">
+          <span aria-hidden="true">🔬</span>
+          <span>AUDIT SCANNER</span>
+        </button>
+        <!-- Session user + sign out -->
+        <span id="indNavUser" class="mono" style="font-size:0.72rem;font-weight:700;color:var(--ink-muted);"></span>
+        <button id="btnIndSignOut" class="btn-cta-secondary ind-exit-btn mono" type="button">SIGN OUT</button>
+        <a href="index.html" class="btn-cta-secondary ind-exit-btn mono">CONSUMER &nearr;</a>
+      </div>
+    </header>
+
+    <!-- MANUFACTURER VIEW -->
+    <main id="mfgView" class="ind-view" style="display:none;" aria-label="Manufacturer Dashboard">
+
+      <!-- KPI Strip -->
+      <section class="kpi-strip" aria-label="Key Performance Indicators">
+        <div class="kpi-card" id="kpiAvgScore">
+          <div class="kpi-label mono">AVG CLEANSCORE</div>
+          <div class="kpi-value mono" id="kpiAvgScoreVal">--</div>
+          <div class="kpi-sparkline" id="sparklineScore" aria-hidden="true"></div>
+          <div class="kpi-trend mono" id="kpiAvgScoreTrend"></div>
+        </div>
+        <div class="kpi-card" id="kpiCompliant">
+          <div class="kpi-label mono">COMPLIANT SKUs</div>
+          <div class="kpi-value mono" id="kpiCompliantVal">--</div>
+          <div class="kpi-sparkline" id="sparklineCompliant" aria-hidden="true"></div>
+          <div class="kpi-trend mono" id="kpiCompliantTrend"></div>
+        </div>
+        <div class="kpi-card kpi-card-harm" id="kpiHarmful">
+          <div class="kpi-label mono">HARMFUL-FLAGGED</div>
+          <div class="kpi-value mono" id="kpiHarmfulVal">--</div>
+          <div class="kpi-sparkline" id="sparklineHarmful" aria-hidden="true"></div>
+          <div class="kpi-trend mono" id="kpiHarmfulTrend"></div>
+        </div>
+        <div class="kpi-card" id="kpiAudited">
+          <div class="kpi-label mono">AUDITED THIS MONTH</div>
+          <div class="kpi-value mono" id="kpiAuditedVal">--</div>
+          <div class="kpi-sparkline" id="sparklineAudited" aria-hidden="true"></div>
+          <div class="kpi-trend mono" id="kpiAuditedTrend"></div>
+        </div>
+      </section>
+
+      <!-- Main: Table + Detail Panel -->
+      <div class="mfg-content-row">
+
+        <!-- Product Table Panel -->
+        <section class="mfg-table-panel" aria-label="Product SKU Table">
+          <div class="table-toolbar">
+            <div class="table-toolbar-left">
+              <h2 class="ind-section-title">SKU PORTFOLIO</h2>
+              <span class="mono ind-count-badge" id="mfgTableCount">4 PRODUCTS</span>
+            </div>
+            <div class="table-toolbar-right">
+              <select id="mfgCategoryFilter" class="ind-select mono" aria-label="Filter by category">
+                <option value="all">ALL CATEGORIES</option>
+              </select>
+              <select id="mfgStatusFilter" class="ind-select mono" aria-label="Filter by compliance status">
+                <option value="all">ALL STATUS</option>
+                <option value="compliant">COMPLIANT</option>
+                <option value="caution">CAUTION</option>
+                <option value="non-compliant">NON-COMPLIANT</option>
+              </select>
+              <input type="search" id="mfgSearch" class="ind-search mono" placeholder="SEARCH SKU..."
+                aria-label="Search products">
+              <button id="btnExportCSV" class="btn-cta-secondary ind-tool-btn mono" type="button"
+                aria-label="Export table as CSV">
+                <span>EXPORT CSV</span>
+                <span aria-hidden="true">&darr;</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="ind-table-wrap" role="region"
+            aria-label="Sortable product table, use column header buttons to sort" tabindex="0">
+            <table class="ind-table" id="mfgTable">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <button class="sort-btn" data-col="name" type="button">
+                      PRODUCT <span class="sort-icon" aria-hidden="true">&#8597;</span>
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button class="sort-btn" data-col="category" type="button">
+                      CATEGORY <span class="sort-icon" aria-hidden="true">&#8597;</span>
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button class="sort-btn" data-col="cleanScore" type="button">
+                      CLEANSCORE <span class="sort-icon" aria-hidden="true">&#8597;</span>
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button class="sort-btn" data-col="harmfulCount" type="button">
+                      HARMFUL # <span class="sort-icon" aria-hidden="true">&#8597;</span>
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button class="sort-btn" data-col="complianceStatus" type="button">
+                      STATUS <span class="sort-icon" aria-hidden="true">&#8597;</span>
+                    </button>
+                  </th>
+                  <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody id="mfgTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Compliance Detail Panel -->
+        <aside class="mfg-detail-panel" id="mfgDetailPanel" aria-label="Product compliance detail" aria-live="polite">
+          <div class="detail-empty-state" id="detailEmptyState">
+            <div class="detail-empty-icon" aria-hidden="true">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="2"
+                  stroke-dasharray="4 3" />
+                <line x1="16" y1="24" x2="32" y2="24" stroke="currentColor" stroke-width="2" />
+                <line x1="24" y1="16" x2="24" y2="32" stroke="currentColor" stroke-width="2" />
+              </svg>
+            </div>
+            <div class="mono" style="font-size:0.8rem;color:var(--ink-muted);text-align:center;margin-top:12px;">SELECT
+              A PRODUCT<br>TO VIEW COMPLIANCE DETAIL</div>
+          </div>
+
+          <div class="detail-content" id="detailContent" style="display:none;">
+            <div class="detail-product-header">
+              <div class="mono"
+                style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--ink-muted);margin-bottom:3px;">
+                <span style="font-weight:800;color:var(--ink-harm);">PRODUCT COMPLIANCE FILE:</span>
+                <span id="detailProductCategory">CATEGORY</span>
+              </div>
+              <h3 class="detail-product-name" id="detailProductName">Product Name</h3>
+              <div class="detail-score-row">
+                <div class="detail-score-badge" id="detailScoreBadge">
+                  <span class="mono detail-score-num" id="detailScoreNum">00</span>
+                  <span class="mono detail-score-label">/100 CLEANSCORE</span>
+                </div>
+                <span class="ind-status-badge" id="detailStatusBadge">STATUS</span>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-section-title mono">DECLARED vs DETECTED INGREDIENTS</div>
+              <div class="dvd-table-wrap">
+                <table class="dvd-table" aria-label="Declared vs detected ingredients comparison">
+                  <thead>
+                    <tr>
+                      <th scope="col">INGREDIENT</th>
+                      <th scope="col">DECLARED</th>
+                      <th scope="col">DETECTED</th>
+                      <th scope="col">% LIMIT</th>
+                      <th scope="col">STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dvdTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-section-title mono">COMPLIANCE TIMELINE</div>
+              <ol class="compliance-timeline" id="complianceTimeline" aria-label="Compliance status history"></ol>
+            </div>
+
+            <div class="detail-section" style="margin-top:20px;">
+              <div class="detail-section-title mono"
+                style="display:flex; justify-content:space-between; align-items:center;">
+                <span>8-POINT STATUTORY AUDIT DOSSIER</span>
+                <span class="mono" style="font-size:0.68rem; color:var(--ink-muted);">HACKATHON MVP REGULATORY
+                  SUITE</span>
+              </div>
+              <div id="mfgDossierContainer"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- INSPECTOR VIEW -->
+    <main id="inspView" class="ind-view" style="display:none;" aria-label="Inspector Dashboard">
+      <div class="insp-layout">
+
+        <!-- Queue Panel -->
+        <section class="insp-queue-panel" aria-label="Product Review Queue">
+          <div class="insp-queue-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <h2 class="ind-section-title">REVIEW QUEUE</h2>
+              <span class="mono ind-count-badge" id="inspQueueCount">0 PENDING</span>
+            </div>
+            <button id="btnQueueScanTrigger" class="btn-cta-primary mono" type="button"
+              style="font-size:0.72rem;padding:4px 10px;box-shadow:2px 2px 0 var(--ink);">
+              ⚡ SCAN INGREDIENT LABEL
+            </button>
+          </div>
+          <!-- Quick Enqueue Bar -->
+          <div class="insp-enqueue-bar">
+            <input type="text" id="inputQueueBarcode" class="ind-search-input mono"
+              placeholder="Barcode or SKU (e.g. 5449000000996)..." style="font-size:0.75rem;padding:6px 8px;flex:1;">
+            <button id="btnQuickAddToQueue" class="btn-cta-primary mono" type="button"
+              style="font-size:0.72rem;padding:6px 12px;white-space:nowrap;">
+              + ADD TO QUEUE
+            </button>
+          </div>
+          <div class="insp-queue-filters" role="group" aria-label="Filter queue by status">
+            <button class="queue-filter-btn active" data-status="all" type="button">ALL</button>
+            <button class="queue-filter-btn" data-status="pending" type="button">PENDING</button>
+            <button class="queue-filter-btn" data-status="passed" type="button">PASSED</button>
+            <button class="queue-filter-btn" data-status="flagged" type="button">FLAGGED</button>
+            <button class="queue-filter-btn" data-status="escalated" type="button">ESCALATED</button>
+          </div>
+          <div class="insp-queue-list" id="inspQueueList" role="list" aria-label="Product review queue"></div>
+        </section>
+
+        <!-- Review Panel -->
+        <section class="insp-review-panel" aria-label="Product Review Panel">
+          <div class="insp-review-empty" id="inspReviewEmpty">
+            <div aria-hidden="true">
+              <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                <circle cx="28" cy="28" r="22" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4" />
+                <path d="M20 28L26 34L36 22" stroke="currentColor" stroke-width="2.5" />
+              </svg>
+            </div>
+            <div class="mono" style="font-size:0.8rem;color:var(--ink-muted);text-align:center;margin-top:12px;">SELECT
+              A PRODUCT FROM THE QUEUE<br>TO BEGIN REVIEW</div>
+          </div>
+
+          <div class="insp-review-content" id="inspReviewContent" style="display:none;">
+            <div class="insp-review-header">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                <div>
+                  <div class="mono"
+                    style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--ink-muted);margin-bottom:3px;">
+                    <span style="font-weight:800;color:var(--ink-harm);">INSPECTED PRODUCT:</span>
+                    <span id="inspProdCategory">CATEGORY</span>
+                  </div>
+                  <h3 class="insp-review-title" id="inspProdName">Product</h3>
+                  <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+                    <div class="detail-score-badge">
+                      <span class="mono detail-score-num" id="inspScoreNum">00</span>
+                      <span class="mono detail-score-label">/100</span>
+                    </div>
+                    <span class="mono" style="font-size:0.78rem;color:var(--ink-muted);" id="inspProdHarmCount">--
+                      harmful</span>
+                  </div>
+                </div>
+                <button id="btnScanCurrentProduct" class="btn-cta-secondary mono" type="button"
+                  style="font-size:0.72rem;padding:6px 12px;box-shadow:2px 2px 0 var(--ink);white-space:nowrap;"
+                  title="Scan ingredient label with optical forensic inspection">
+                  🔬 AUDIT SCANNER
+                </button>
+              </div>
+            </div>
+
+            <div class="insp-ingr-summary" id="inspIngrSummary" aria-label="Ingredient summary for review"></div>
+
+            <!-- JEV AI STATUTORY INSPECTION AUDIT -->
+            <div class="insp-jev-audit-card" id="inspJevAuditCard" aria-label="Jev AI Statutory Compliance Audit">
+              <div class="insp-jev-head">
+                <div class="insp-jev-title-wrap">
+                  <span class="mono ind-badge" style="background:var(--ink);color:var(--paper-bg);font-weight:900;">JEV
+                    AI</span>
+                  <span
+                    style="font-family:var(--font-display);font-weight:900;font-size:1.05rem;letter-spacing:-0.01em;">STATUTORY
+                    AUDIT &amp; REGULATORY INTELLIGENCE</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="mono" style="font-size:0.7rem;color:var(--ink-muted);font-weight:700;">AUDIT
+                    DECISION:</span>
+                  <span class="insp-jev-badge badge-risk-high" id="inspJevVerdictBadge">NON-COMPLIANT</span>
+                </div>
+              </div>
+
+              <div class="insp-jev-grid">
+                <div class="insp-jev-box">
+                  <span class="insp-jev-box-title">REGULATORY RISK SEVERITY</span>
+                  <div class="insp-jev-box-val" id="inspJevRiskLevel" style="color:var(--ink-harm);">HIGH RISK
+                    (STATUTORY EXCURSIONS)</div>
+                  <div class="mono" style="font-size:0.7rem;color:var(--ink-muted);margin-top:2px;"
+                    id="inspJevPriority">PRIORITY: URGENT AUDIT ACTION</div>
+                </div>
+
+                <div class="insp-jev-box">
+                  <span class="insp-jev-box-title">ANALYTICAL DECISION FLAGS</span>
+                  <div id="inspJevFlagsContainer" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                    <span class="ind-status-badge status-non-compliant">HIGH_SUGAR</span>
+                    <span class="ind-status-badge status-caution">ADDITIVE_PRESENT</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Statutory Enforcement Action Recommendation -->
+              <div class="insp-jev-action-box">
+                <div class="mono" style="font-size:0.72rem;font-weight:800;color:var(--ink-harm);margin-bottom:3px;">
+                  ⚡ RECOMMENDED STATUTORY ENFORCEMENT ACTION:
+                </div>
+                <div id="inspJevStatutoryAction" style="font-size:0.8rem;font-weight:700;line-height:1.4;">
+                  Issue Improvement Notice under FSS Act Section 32; Mandate Front-of-Pack Warning Tag per FSSR 2020
+                </div>
+              </div>
+
+              <!-- Rule Citations & Briefing -->
+              <div class="insp-jev-box">
+                <span class="insp-jev-box-title">STATUTORY RULE CITATIONS</span>
+                <ul class="insp-jev-citations-list" id="inspJevCitationsList">
+                  <li>FSS (Labelling and Display) Regs 2020 Cl. 2.4.4 &amp; WHO 2024 Free Sugar Ceiling (25g/day)</li>
+                  <li>FSSR 2011 Schedule II Specific Functional Class and INS Code Declaration</li>
+                </ul>
+                <div class="mono"
+                  style="font-size:0.72rem;color:var(--ink-muted);margin-top:6px;border-top:1px dashed rgba(17,17,16,0.15);padding-top:6px;"
+                  id="inspJevBriefingText">
+                  Forensic lab classification compiled via Jev System One decision model. Bounded typed evaluation based
+                  strictly on PackCheck factual parameters.
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section" style="margin-top:16px;">
+              <div class="detail-section-title mono"
+                style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span>STATUTORY INSPECTION DOSSIER (8 SECTIONS)</span>
+                <button id="btnExportInspReport" class="btn-cta-secondary mono" type="button"
+                  style="font-size:0.7rem; padding:4px 10px; box-shadow:2px 2px 0 var(--ink);">
+                  📄 EXPORT AUDIT REPORT (JSON)
+                </button>
+              </div>
+              <div id="inspDossierContainer"></div>
+            </div>
+
+            <div class="insp-verdict-block">
+              <div class="detail-section-title mono">INSPECTOR VERDICT</div>
+              <div class="insp-action-row" role="group" aria-label="Inspector verdict actions">
+                <button class="insp-action-btn insp-pass" id="btnInspPass" type="button">
+                  <span class="insp-action-icon" aria-hidden="true">&#10003;</span>
+                  <span>PASS</span>
+                </button>
+                <button class="insp-action-btn insp-flag" id="btnInspFlag" type="button">
+                  <span class="insp-action-icon" aria-hidden="true">&#9873;</span>
+                  <span>FLAG</span>
+                </button>
+                <button class="insp-action-btn insp-escalate" id="btnInspEscalate" type="button">
+                  <span class="insp-action-icon" aria-hidden="true">&#11014;</span>
+                  <span>ESCALATE</span>
+                </button>
+              </div>
+              <div class="insp-current-verdict" id="inspCurrentVerdict" aria-live="polite">
+                <span class="mono" style="font-size:0.75rem;color:var(--ink-muted);">CURRENT STATUS:</span>
+                <span class="ind-status-badge" id="inspVerdictBadge">PENDING</span>
+              </div>
+
+              <label for="inspNotesField" class="detail-section-title mono"
+                style="display:block;margin-top:18px;margin-bottom:6px;">INSPECTOR NOTES</label>
+              <textarea id="inspNotesField" class="insp-notes-field mono" rows="4"
+                placeholder="Add your inspection notes, observations, or escalation reason..."
+                aria-label="Inspector notes"></textarea>
+              <button class="btn-cta-primary insp-save-btn" id="btnSaveNote" type="button"
+                style="font-size:0.8rem;padding:8px 18px;margin-top:8px;">
+                <span>SAVE NOTE</span>
+                <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
+
+            <div class="insp-notes-log" id="inspNotesLog" aria-label="Inspector notes history" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ========================================================================
+       INSPECTOR & REGULATORY AUDIT SCANNER MODAL
+       ======================================================================== -->
+  <div class="scanner-modal-backdrop" id="inspScannerModal" role="dialog" aria-modal="true"
+    aria-labelledby="inspScannerTitle">
+    <div class="scanner-modal-card insp-scanner-modal-card">
+      <div class="scanner-modal-header">
+        <div>
+          <div class="mono" style="font-size:0.7rem;color:var(--ink-muted);letter-spacing:0.06em;">REGULATORY AUDIT
+            SUITE // FORENSIC INSPECTION</div>
+          <h2 class="modal-title-text" id="inspScannerTitle">INSPECTOR &amp; REGULATORY SCANNER</h2>
+        </div>
+        <button id="btnCloseInspScanner" class="modal-close-btn" type="button"
+          aria-label="Close inspector scanner">✕</button>
+      </div>
+
+      <div class="scanner-modal-body" style="padding: 20px;">
+
+        <!-- SCANNER INPUT MODES (TABS) -->
+        <div id="inspScanModeSelector" class="insp-scan-mode-nav" role="tablist" aria-label="Scanner input modes">
+          <button class="insp-mode-btn active" id="btnModeCamera" type="button" role="tab" aria-selected="true"
+            data-mode="camera">
+            <span aria-hidden="true">📷</span>
+            <span>LIVE CAMERA</span>
+          </button>
+          <button class="insp-mode-btn" id="btnModeUpload" type="button" role="tab" aria-selected="false"
+            data-mode="upload">
+            <span aria-hidden="true">📁</span>
+            <span>HPLC / LABEL FILE</span>
+          </button>
+          <button class="insp-mode-btn" id="btnModeManual" type="button" role="tab" aria-selected="false"
+            data-mode="manual">
+            <span aria-hidden="true">⌨️</span>
+            <span>MANUAL BARCODE</span>
+          </button>
+          <button class="insp-mode-btn" id="btnModePresets" type="button" role="tab" aria-selected="false"
+            data-mode="presets">
+            <span aria-hidden="true">🏷️</span>
+            <span>PRESET SAMPLES</span>
+          </button>
+        </div>
+
+        <!-- MODE 1: LIVE OPTICAL CAMERA SCANNER -->
+        <div id="inspScanCameraState" class="insp-scan-mode-panel" style="display: block;">
+          <div class="insp-camera-container">
+            <video id="inspScannerVideo" autoplay muted playsinline class="insp-camera-video"></video>
+
+            <!-- Corner Frame Reticles -->
+            <div
+              style="position:absolute;top:16px;left:16px;width:36px;height:36px;border-top:3px solid var(--ink-harm);border-left:3px solid var(--ink-harm);">
+            </div>
+            <div
+              style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-top:3px solid var(--ink-harm);border-right:3px solid var(--ink-harm);">
+            </div>
+            <div
+              style="position:absolute;bottom:16px;left:16px;width:36px;height:36px;border-bottom:3px solid var(--ink-harm);border-left:3px solid var(--ink-harm);">
+            </div>
+            <div
+              style="position:absolute;bottom:16px;right:16px;width:36px;height:36px;border-bottom:3px solid var(--ink-harm);border-right:3px solid var(--ink-harm);">
+            </div>
+
+            <!-- Optical Laser Beam -->
+            <div id="inspCameraLaserLine" class="insp-camera-laser"></div>
+
+            <!-- Sensor Telemetry Overlay -->
+            <div id="inspCameraStatusLabel" class="insp-camera-status-label mono">
+              POINT OPTICAL SENSOR AT PACKAGING BARCODE
+            </div>
+          </div>
+
+          <!-- Camera Controls Toolbar -->
+          <div class="insp-camera-toolbar">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label for="inspCameraSelect" class="mono"
+                style="font-size:0.7rem;color:var(--ink-muted);font-weight:700;">CAMERA SENSOR:</label>
+              <select id="inspCameraSelect" class="ind-select mono" style="font-size:0.72rem;padding:4px 8px;"></select>
+            </div>
+            <button id="btnInspSwitchToUpload" type="button" class="btn-cta-secondary mono"
+              style="font-size:0.7rem;padding:4px 10px;">
+              FILE / OCR INSTEAD &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- MODE 2: UPLOAD PACKAGING PHOTO / HPLC REPORT -->
+        <div id="inspScanUploadState" class="insp-scan-mode-panel" style="display: none;">
+          <div class="scan-dropzone" id="inspScanDropzone" tabindex="0" role="button"
+            aria-label="Upload packaging photo or ingredient report">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <div>
+              <div class="dropzone-title">UPLOAD PACKAGING PHOTO / HPLC CHROMATOGRAPHY REPORT</div>
+              <div class="dropzone-sub">Upload high-res packaging label, back-of-pack photo, or laboratory
+                chromatography file</div>
+            </div>
+            <button class="btn-cta-primary mono" style="font-size: 0.8rem; padding: 7px 18px;" type="button"
+              id="btnTriggerInspFileInput">
+              SELECT FILE / TAKE PHOTO
+            </button>
+            <input type="file" id="inspModalFileInput" style="display: none;" accept="image/*,.pdf">
+            <div class="dropzone-disclaimer mono">
+              Engine extracts barcode via computer vision or runs OCR extraction on ingredients &amp; nutrition tables.
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE 3: MANUAL BARCODE / GTIN / SKU ENTRY -->
+        <div id="inspScanManualState" class="insp-scan-mode-panel" style="display: none;">
+          <div class="insp-manual-box">
+            <div class="mono" style="font-size:0.75rem;font-weight:700;color:var(--ink-muted);">DIRECT SKU / GTIN-13
+              REGULATORY AUDIT:</div>
+            <p style="font-size:0.82rem;color:var(--ink);margin:6px 0 14px;">
+              Enter any 8, 12, 13, or 14-digit standard food barcode (e.g. 5449000000996, 8901030383701). The system
+              queries the Open Food Facts central repository and compiles a full statutory audit profile.
+            </p>
+            <form id="inspManualForm" class="insp-manual-form" onsubmit="return false;">
+              <input type="text" id="inspManualBarcodeInput" class="insp-manual-input"
+                placeholder="Enter barcode (e.g. 5449000000996)..." autocomplete="off" spellcheck="false">
+              <button id="btnInspManualSubmit" class="btn-cta-primary mono" type="button"
+                style="padding:10px 20px;font-size:0.82rem;white-space:nowrap;">
+                🔍 AUDIT SKU
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODE 4: QUICK SELECT PRESET BATCHES -->
+        <div id="inspScanPresetsState" class="insp-scan-mode-panel" style="display: none;">
+          <div class="mono" style="font-size: 0.75rem; font-weight: 700; color: var(--ink-muted); margin-bottom: 8px;">
+            SELECT SKU BATCH SAMPLE FOR INSTANT LAB AUDIT:
+          </div>
+          <div class="insp-preset-batch-grid">
+            <button class="insp-batch-pill" data-prod-id="consumer-1" type="button">
+              <div class="insp-batch-pill-name">VOLT SURGE ENERGY 250ML</div>
+              <div class="insp-batch-pill-meta mono">BATCH #VS-2026-09 · <span style="color:var(--ink-harm);">[2 OVER
+                  LIMIT]</span></div>
+            </button>
+            <button class="insp-batch-pill" data-prod-id="consumer-2" type="button">
+              <div class="insp-batch-pill-name">SPARK ZERO COLA 330ML</div>
+              <div class="insp-batch-pill-meta mono">BATCH #SZ-2026-08 · <span
+                  style="color:var(--ink-safe);">[COMPLIANT]</span></div>
+            </button>
+            <button class="insp-batch-pill" data-prod-id="consumer-3" type="button">
+              <div class="insp-batch-pill-name">NATURESIP MANGO 200ML</div>
+              <div class="insp-batch-pill-meta mono">BATCH #NM-2026-09 · <span style="color:var(--ink-warn);">[CAUTION /
+                  SULPHITE]</span></div>
+            </button>
+            <button class="insp-batch-pill" data-prod-id="consumer-4" type="button">
+              <div class="insp-batch-pill-name">CRISPBITE SEA SALT CHIPS 45G</div>
+              <div class="insp-batch-pill-meta mono">BATCH #CB-2026-09 · <span style="color:var(--ink-warn);">[SAT FAT
+                  CAUTION]</span></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: ACTIVE SCANNING LASER ANIMATION -->
+        <div id="inspScanActiveState" style="display: none; padding: 40px 20px; text-align: center;">
+          <div class="insp-scanner-reticle-box">
+            <div class="insp-scan-laser-line"></div>
+            <div class="insp-scan-grid-overlay"></div>
+            <div class="mono" id="inspScanTelemetryText"
+              style="font-size: 0.95rem; font-weight: 900; color: var(--ink);">
+              OPTICAL CHARACTER RECOGNITION (OCR) SCANNING...
+            </div>
+            <div class="mono" id="inspScanSubTicker"
+              style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 8px;">
+              Cross-referencing formulation against WHO &amp; FSSAI permissible ceilings...
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: FORENSIC INGREDIENT & REGULATORY INSPECTION RESULT -->
+        <div id="inspScanResultState" style="display: none;">
+          <!-- Product Audit Card Header -->
+          <div class="insp-result-header-box">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+              <div style="flex:1;min-width:280px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                  <span class="mono ind-badge" id="inspResultSkuId">SKU #001</span>
+                  <span class="mono" style="font-size:0.75rem; color:var(--ink-muted);" id="inspResultCategory">ENERGY
+                    DRINK</span>
+                  <span class="mono" style="font-size:0.75rem; color:var(--ink-muted); font-weight:700;"
+                    id="inspResultBrand"></span>
+                </div>
+                <div class="mono"
+                  style="font-size:0.72rem;font-weight:800;letter-spacing:0.06em;color:var(--ink-harm);margin-bottom:2px;">
+                  AUDITED PRODUCT NAME:</div>
+                <h2 id="inspResultTitle"
+                  style="font-family:var(--font-display); font-size:1.85rem; font-weight:900; color:var(--ink); margin:0 0 4px; line-height:1.15; text-transform:uppercase; word-break:break-word;">
+                  PRODUCT NAME</h2>
+                <div class="mono" id="inspResultServing" style="font-size:0.75rem;color:var(--ink-muted);">STANDARD
+                  NUTRITION AUDIT (PER 100G/ML)</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div style="text-align:right;">
+                  <div class="mono" style="font-size:0.68rem; color:var(--ink-muted); letter-spacing:0.04em;">AUDIT
+                    CLEANSCORE</div>
+                  <div class="mono" id="inspResultCleanScore" style="font-size:1.75rem; font-weight:900;">--<span
+                      style="font-size:0.85rem; color:var(--ink-muted);">/100</span></div>
+                </div>
+                <div id="inspResultStatusPill" class="ind-status-badge status-non-compliant">NON-COMPLIANT</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inspector Action Decision Bar -->
+          <div class="insp-result-actions-bar">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span class="mono" style="font-size:0.75rem;font-weight:700;color:var(--ink-muted);">INSPECTOR
+                ACTION:</span>
+              <button id="btnInspModalPass" class="insp-action-btn insp-pass mono" type="button"
+                style="padding:6px 14px; font-size:0.75rem;">
+                ✓ PASS BATCH
+              </button>
+              <button id="btnInspModalFlag" class="insp-action-btn insp-flag mono" type="button"
+                style="padding:6px 14px; font-size:0.75rem;">
+                ⚑ FLAG INGREDIENT
+              </button>
+              <button id="btnInspModalEscalate" class="insp-action-btn insp-escalate mono" type="button"
+                style="padding:6px 14px; font-size:0.75rem;">
+                ⬆ ESCALATE
+              </button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <button id="btnInspScanAnother" class="btn-cta-secondary mono" type="button"
+                style="font-size:0.72rem; padding:6px 12px;">
+                ↺ SCAN ANOTHER
+              </button>
+              <button id="btnInspExportModalReport" class="btn-cta-secondary mono" type="button"
+                style="font-size:0.72rem; padding:6px 12px;">
+                📄 EXPORT JSON
+              </button>
+              <button id="btnInspOpenInQueue" class="btn-cta-primary mono" type="button"
+                style="font-size:0.72rem; padding:6px 14px;">
+                OPEN IN INSPECTOR QUEUE &rarr;
+              </button>
+              <button id="btnInspOpenInPortfolio" class="btn-cta-secondary mono" type="button"
+                style="font-size:0.72rem; padding:6px 14px;">
+                VIEW IN SKU PORTFOLIO &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Forensic Dissection Section Tabs -->
+          <div class="insp-result-tab-nav" role="tablist" aria-label="Inspection result sections">
+            <button class="insp-result-tab-btn active" data-target="inspTabDvd" type="button" role="tab"
+              aria-selected="true">
+              DECLARED VS DETECTED
+            </button>
+            <button class="insp-result-tab-btn" data-target="inspTabNutr" type="button" role="tab"
+              aria-selected="false">
+              NUTRITIONAL AUDIT
+            </button>
+            <button class="insp-result-tab-btn" data-target="inspTabIngr" type="button" role="tab"
+              aria-selected="false">
+              ADDITIVES &amp; INS TAXONOMY
+            </button>
+            <button class="insp-result-tab-btn" data-target="inspTabDossier" type="button" role="tab"
+              aria-selected="false">
+              8-POINT STATUTORY DOSSIER
+            </button>
+            <button class="insp-result-tab-btn" data-target="inspTabJev" type="button" role="tab" aria-selected="false">
+              ⚡ JEV AI STATUTORY AUDIT
+            </button>
+          </div>
+
+          <!-- SUBTAB 1: DECLARED VS DETECTED -->
+          <div id="inspTabDvd" class="insp-result-tab-panel active">
+            <div class="detail-section-title mono"
+              style="display:flex; justify-content:space-between; align-items:center;">
+              <span>INGREDIENT FORENSIC DISSECTION (LAB REALITY VS LABEL)</span>
+              <span class="mono" id="inspResultHarmSummary" style="color:var(--ink-harm); font-size:0.75rem;">2 HARMFUL
+                FLAGS DETECTED</span>
+            </div>
+
+            <div class="ind-table-wrap" style="margin-top: 8px; max-height: 240px; overflow-y: auto;">
+              <table class="ind-table" id="inspForensicTable">
+                <thead>
+                  <tr>
+                    <th>SUBSTANCE</th>
+                    <th>LABEL DECLARED</th>
+                    <th>LAB DETECTED</th>
+                    <th>REGULATORY LIMIT REF</th>
+                    <th>COMPLIANCE</th>
+                  </tr>
+                </thead>
+                <tbody id="inspForensicTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- High Risk Substance Notice Box -->
+            <div id="inspResultFlagsBox"
+              style="margin-top: 14px; padding: 12px; background: rgba(201, 42, 42, 0.08); border: 2px solid var(--ink-harm); display: flex; flex-direction: column; gap: 6px;">
+              <div class="mono" style="font-weight: 700; color: var(--ink-harm); font-size: 0.8rem;">
+                🚨 REGULATORY RISK SUMMARY
+              </div>
+              <div id="inspResultFlagsList" class="mono" style="font-size: 0.76rem; line-height: 1.45;"></div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 2: NUTRITIONAL AUDIT -->
+          <div id="inspTabNutr" class="insp-result-tab-panel" style="display:none;">
+            <div class="detail-section-title mono">STATUTORY NUTRITIONAL BENCHMARK (WHO &amp; ICMR-NIN)</div>
+            <div class="ind-table-wrap" style="margin-top: 8px; max-height: 280px; overflow-y: auto;">
+              <table class="ind-table" id="inspNutrTable">
+                <thead>
+                  <tr>
+                    <th>NUTRIENT</th>
+                    <th>QUANTITY / 100G</th>
+                    <th>WHO / ICMR BENCHMARK</th>
+                    <th>RISK LEVEL</th>
+                    <th>REGULATORY INTERPRETATION</th>
+                  </tr>
+                </thead>
+                <tbody id="inspNutrTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUBTAB 3: ADDITIVES & INS TAXONOMY -->
+          <div id="inspTabIngr" class="insp-result-tab-panel" style="display:none;">
+            <div class="detail-section-title mono">ADDITIVES, ALLERGENS &amp; INS TAXONOMY CLASSIFICATION</div>
+            <div class="ind-table-wrap" style="margin-top: 8px; max-height: 280px; overflow-y: auto;">
+              <table class="ind-table" id="inspIngrTable">
+                <thead>
+                  <tr>
+                    <th>INGREDIENT / SUBSTANCE</th>
+                    <th>INS CODE</th>
+                    <th>FUNCTIONAL CLASS</th>
+                    <th>SAFETY STATUS</th>
+                    <th>NOTES &amp; TOXICOLOGY</th>
+                  </tr>
+                </thead>
+                <tbody id="inspIngrTableBody2"></tbody>
+              </table>
+            </div>
+            <div id="inspAllergenBox"
+              style="margin-top:12px;padding:10px 14px;background:var(--paper-surface);border:var(--border-med);"
+              class="mono">
+              <span style="font-weight:700;">MANDATORY ALLERGEN DISCLOSURES:</span>
+              <span id="inspAllergenText" style="color:var(--ink-muted);margin-left:6px;">None declared</span>
+            </div>
+          </div>
+
+          <!-- SUBTAB 4: 8-POINT STATUTORY DOSSIER -->
+          <div id="inspTabDossier" class="insp-result-tab-panel" style="display:none;">
+            <div class="detail-section-title mono">STATUTORY REGULATORY DOSSIER (8 SCIENTIFIC MODULES)</div>
+            <div id="inspModalDossierContainer" style="margin-top:8px;"></div>
+          </div>
+
+          <!-- SUBTAB 5: JEV AI STATUTORY AUDIT -->
+          <div id="inspTabJev" class="insp-result-tab-panel" style="display:none;">
+            <div class="insp-jev-audit-card" id="modalInspJevAuditCard" style="margin-top:0;">
+              <div class="insp-jev-head">
+                <div class="insp-jev-title-wrap">
+                  <span class="mono ind-badge" style="background:var(--ink);color:var(--paper-bg);font-weight:900;">JEV
+                    AI</span>
+                  <span
+                    style="font-family:var(--font-display);font-weight:900;font-size:1.05rem;letter-spacing:-0.01em;">STATUTORY
+                    AUDIT &amp; REGULATORY INTELLIGENCE</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="mono" style="font-size:0.7rem;color:var(--ink-muted);font-weight:700;">AUDIT
+                    DECISION:</span>
+                  <span class="insp-jev-badge badge-risk-high" id="modalInspJevVerdictBadge">NON-COMPLIANT</span>
+                </div>
+              </div>
+
+              <div class="insp-jev-grid">
+                <div class="insp-jev-box">
+                  <span class="insp-jev-box-title">REGULATORY RISK SEVERITY</span>
+                  <div class="insp-jev-box-val" id="modalInspJevRiskLevel" style="color:var(--ink-harm);">HIGH RISK
+                    (STATUTORY EXCURSIONS)</div>
+                  <div class="mono" style="font-size:0.7rem;color:var(--ink-muted);margin-top:2px;"
+                    id="modalInspJevPriority">PRIORITY: URGENT AUDIT ACTION</div>
+                </div>
+
+                <div class="insp-jev-box">
+                  <span class="insp-jev-box-title">ANALYTICAL DECISION FLAGS</span>
+                  <div id="modalInspJevFlagsContainer" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                    <span class="ind-status-badge status-non-compliant">HIGH_SUGAR</span>
+                    <span class="ind-status-badge status-caution">ADDITIVE_PRESENT</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Statutory Enforcement Action Recommendation -->
+              <div class="insp-jev-action-box">
+                <div class="mono" style="font-size:0.72rem;font-weight:800;color:var(--ink-harm);margin-bottom:3px;">
+                  ⚡ RECOMMENDED STATUTORY ENFORCEMENT ACTION:
+                </div>
+                <div id="modalInspJevStatutoryAction" style="font-size:0.8rem;font-weight:700;line-height:1.4;">
+                  Issue Improvement Notice under FSS Act Section 32; Mandate Front-of-Pack Warning Tag per FSSR 2020
+                </div>
+              </div>
+
+              <!-- Rule Citations & Briefing -->
+              <div class="insp-jev-box">
+                <span class="insp-jev-box-title">STATUTORY RULE CITATIONS</span>
+                <ul class="insp-jev-citations-list" id="modalInspJevCitationsList">
+                  <li>FSS (Labelling and Display) Regs 2020 Cl. 2.4.4 &amp; WHO 2024 Free Sugar Ceiling (25g/day)</li>
+                  <li>FSSR 2011 Schedule II Specific Functional Class and INS Code Declaration</li>
+                </ul>
+                <div class="mono"
+                  style="font-size:0.72rem;color:var(--ink-muted);margin-top:6px;border-top:1px dashed rgba(17,17,16,0.15);padding-top:6px;"
+                  id="modalInspJevBriefingText">
+                  Forensic lab classification compiled via Jev System One decision model. Bounded typed evaluation based
+                  strictly on PackCheck factual parameters.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="liveRegion" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="api.js"></script>
+  <script src="dossier_data.js"></script>
+  <script src="industry.js"></script>
+</body>
+
+</html>
